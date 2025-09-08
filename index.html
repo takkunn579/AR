@@ -1,75 +1,24 @@
 <!DOCTYPE html>
-<html>
 <head>
-  <!-- A-Frame と AR.js -->
-  <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-  <script src="https://raw.githack.com/donmccurdy/aframe-extras/master/dist/aframe-extras.loaders.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
+  <!-- ① スクリプトの読み込み -->
+  <script src="https://aframe.io/releases/0.8.2/aframe.min.js"></script>
+  <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/1.6.2/aframe/build/aframe-ar.js"></script>
 </head>
+<body style='margin: 0; overflow: hidden;'>
 
-<body style="margin: 0; overflow: hidden;">
-  <!-- 📷 撮影ボタン -->
-  <button id="captureBtn" 
-    style="position: absolute; top: 20px; right: 20px; z-index: 9999; padding: 10px; font-size: 16px;">
-    📷 撮影
-  </button>
+<!-- シーンの追加とデバックUIを非表示 -->
+<a-scene embedded arjs="debugUIEnabled:false;">
 
-  <!-- ARシーン -->
-  <a-scene
-      vr-mode-ui="enabled: false;"
-      loading-screen="enabled: false;"
-      renderer="logarithmicDepthBuffer: true;"
-      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-      embedded
-      gesture-detector
-  >
-      <a-assets>
-          <!-- 複数モデル -->
-          <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
-          <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
-          <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
-      </a-assets>
+  <!-- ② hiroマーカーでのソース -->
+  <a-marker preset="hiro">
+    <a-sphere scale=".25 .25 .25" position="0 .5 0" color="#111">
+      <a-animation attribute="position" to="0 1 0" direction="alternate" dur="2000" repeat="indefinite">
+      </a-animation>
+    </a-sphere>
+  </a-marker>
 
-      <!-- マーカー1 → model1 -->
-      <a-marker type="pattern" url="assets/marker1.patt">
-          <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" gesture-handler></a-entity>
-      </a-marker>
-
-      <!-- マーカー2 → model2 -->
-      <a-marker type="pattern" url="assets/marker2.patt">
-          <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" gesture-handler></a-entity>
-      </a-marker>
-
-      <!-- マーカー3 → model3 -->
-      <a-marker type="pattern" url="assets/marker3.patt">
-          <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" gesture-handler></a-entity>
-      </a-marker>
-
-      <!-- Hiroマーカー → デモ用のアニメーション球体 -->
-      <a-marker preset="hiro">
-          <a-sphere scale=".25 .25 .25" position="0 .5 0" color="#111">
-              <a-animation attribute="position" to="0 1 0" direction="alternate" dur="2000" repeat="indefinite"></a-animation>
-          </a-sphere>
-      </a-marker>
-
-      <a-entity camera></a-entity>
-  </a-scene>
-
-  <!-- 📷 撮影スクリプト -->
-  <script>
-    document.getElementById("captureBtn").addEventListener("click", function () {
-      var scene = document.querySelector("a-scene");
-      var canvas = scene.renderer.domElement;
-      var dataURL = canvas.toDataURL("image/png");
-
-      // ダウンロードリンクを作成して保存
-      var a = document.createElement("a");
-      a.href = dataURL;
-      a.download = "capture.png";
-      a.click();
-    });
-  </script>
+  
+  <a-entity camera></a-entity>
+</a-scene>
 </body>
 </html>
