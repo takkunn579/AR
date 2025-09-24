@@ -111,23 +111,32 @@
 
         <!-- マーカー1 → model1 -->
         <a-marker type="pattern" url="assets/marker1.patt">
-             <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+             <!-- 【修正】座標系を補正するための親エンティティを追加 -->
+             <a-entity rotation="-90 0 0">
+                <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+             </a-entity>
         </a-marker>
 
         <!-- マーカー2 → model2 -->
         <a-marker type="pattern" url="assets/marker2.patt">
-             <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+             <!-- 【修正】座標系を補正するための親エンティティを追加 -->
+             <a-entity rotation="-90 0 0">
+                <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+             </a-entity>
         </a-marker>
 
         <!-- マーカー3 → model3 -->
         <a-marker type="pattern" url="assets/marker3.patt">
-             <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+             <!-- 【修正】座標系を補正するための親エンティティを追加 -->
+             <a-entity rotation="-90 0 0">
+                <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+             </a-entity>
         </a-marker>
 
         <a-entity camera></a-entity>
     </a-scene>
 
-    <!-- 【修正】撮影スクリプトを、ご提示のコードを参考に修正 -->
+    <!-- 撮影スクリプト -->
     <script>
         const sceneEl = document.querySelector("a-scene");
         const captureBtn = document.getElementById("captureBtn");
@@ -161,7 +170,6 @@
             ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
             
             // 2. その上に3Dモデル(A-Frame canvas)を重ねる
-            // 【修正】ご提示いただいた、より正確なアスペクト比維持のロジックに変更
             const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
             const videoAspectRatio = videoWidth / videoHeight;
 
