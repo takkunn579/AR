@@ -196,16 +196,9 @@
                     sy = (aSceneCanvas.height - sHeight) / 2;
                 }
                 
-                // 【修正】ご提案を反映し、切り抜くソース領域を縦に圧縮することで、結果的に引き伸ばして描画する
-                const stretchFactor = 1.1; // 1.1 = 見た目を10%縦に伸ばす。この値を調整してください。
-
-                // 縦に圧縮したソースの高さを計算
-                const squishedSHeight = sHeight / stretchFactor;
-                // 中央から圧縮するように、Y座標の開始位置を調整
-                const squishedSY = sy + (sHeight - squishedSHeight) / 2;
-
-                // 縦に圧縮したソース領域を、描画先キャンバス全体に描画する
-                context.drawImage(aSceneCanvas, sx, squishedSY, sWidth, squishedSHeight, 0, 0, videoWidth, videoHeight);
+                // 【修正】意図的な引き伸ばし処理を削除し、歪みなくクロップするロジックに戻す
+                // クロップしたソース部分を、描画先キャンバス全体に描画する
+                context.drawImage(aSceneCanvas, sx, sy, sWidth, sHeight, 0, 0, videoWidth, videoHeight);
                 
                 return canvas.toDataURL('image/png');
 
