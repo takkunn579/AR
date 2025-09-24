@@ -99,8 +99,8 @@
         arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
         embedded
         gesture-detector
-        
-        <!-- 【修正点1】A-Frameのscreenshot機能は使わないので削除 -->
+        <!-- 【修正点1】参考コードの方式を使うため、A-Frameのscreenshot機能を再度有効化 -->
+        screenshot
     >
         <a-assets>
              <!-- 複数モデル -->
@@ -127,7 +127,7 @@
         <a-entity camera></a-entity>
     </a-scene>
 
-    <!-- 【修正点2】撮影スクリプトを、カメラ映像と3Dモデルを合成する方式に変更 -->
+    <!-- 【修正点2】撮影スクリプトを、参考コードのロジックを元に全面的に書き換え -->
     <script>
         const sceneEl = document.querySelector("a-scene");
         const captureBtn = document.getElementById("captureBtn");
@@ -138,9 +138,11 @@
         captureBtn.addEventListener("click", () => {
             // ARの映像と3Dモデルを合成して撮影する
             const video = document.querySelector('video'); // AR.jsが生成するvideo要素
-            const canvas = sceneEl.canvas;                 // A-Frameが描画するcanvas要素
+            
+            // A-Frameのscreenshotコンポーネントを使って3Dモデルが描画されたcanvasを取得
+            const aSceneCanvas = sceneEl.components.screenshot.getCanvas("perspective");
 
-            if (!video || !canvas) {
+            if (!video || !aSceneCanvas) {
                 console.error('ARの映像または3Dシーンが見つかりません。');
                 return;
             }
@@ -159,8 +161,19 @@
             ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
 
             // 2. その上に、3Dモデルが描画されているA-Frameのcanvasを重ねて描画
-            ctx.drawImage(canvas, 0, 0, videoWidth, videoHeight);
-
+            //    参考コードのロジックを元に、画面の向きに応じて描画方法を調整
+            if (videoWidth > videoHeight) {
+                // 横長の映像の場合 (PCなど)
+                ctx.drawImage(aSceneCanvas, 0, 0, videoWidth, videoHeight);
+            } else {
+                // 縦長の映像の場合 (スマートフォンなど)
+                // 縦横比を維持しつつ、中央にモデルを描画する
+                const scale = videoHeight / videoWidth;
+                const scaledWidth = videoHeight * (aSceneCanvas.width / aSceneCanvas.height);
+                const marginLeft = (videoWidth - scaledWidth) / 2;
+                ctx.drawImage(aSceneCanvas, marginLeft, 0, scaledWidth, videoHeight);
+            }
+            
             // 3. 合成したcanvasから画像データ(DataURL)を生成
             const dataURL = compositeCanvas.toDataURL('image/png');
 
