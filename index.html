@@ -95,17 +95,16 @@
     <a-scene
         vr-mode-ui="enabled: false;"
         loading-screen="enabled: false;"
-        
-        <!-- 【修正点1】rendererに preserveDrawingBuffer: true; を追加 -->
         renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true; preserveDrawingBuffer: true;"
-
         arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
         embedded
         gesture-detector
+        
+        <!-- 【修正点1】A-Frameのスクリーンショット機能を追加 -->
+        screenshot
     >
         <a-assets>
              <!-- 複数モデル -->
-             <!-- 注意: 外部サイトのモデルはCORS設定がないと読み込めない場合があります -->
              <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
              <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
              <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
@@ -123,32 +122,31 @@
 
         <!-- マーカー3 → model3 -->
         <a-marker type="pattern" url="assets/marker3.patt">
-             <!-- 【修正点2】終了タグのタイプミスを修正 -->
              <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" gesture-handler></a-entity>
         </a-marker>
 
         <a-entity camera></a-entity>
     </a-scene>
 
-    <!-- 撮影スクリプト -->
+    <!-- 【修正点2】撮影スクリプトをA-Frameのスクリーンショット機能を使うように変更 -->
     <script>
+        const sceneEl = document.querySelector("a-scene");
         const captureBtn = document.getElementById("captureBtn");
         const preview = document.getElementById("preview");
         const previewImage = document.getElementById("previewImage");
         const closeBtn = document.getElementById("closeBtn");
 
-        captureBtn.addEventListener("click", () => {
-            const sceneEl = document.querySelector("a-scene");
-            const canvas = sceneEl.canvas;
-            
-            // 画面をキャプチャして画像データに変換
-            const dataURL = canvas.toDataURL("image/png");
-            
+        // A-Frameのスクリーンショット機能が完了したときに発生するイベントを待つ
+        sceneEl.addEventListener('screenshotcaptured', (event) => {
             // プレビュー用のimgタグに画像データを設定
-            previewImage.src = dataURL;
-            
+            previewImage.src = event.detail.dataURL;
             // プレビュー画面を表示
-            preview.style.display = "flex";
+            preview.style.display = 'flex';
+        });
+
+        // 撮影ボタンが押されたら、A-Frameの組み込みスクリーンショット機能を呼び出す
+        captureBtn.addEventListener("click", () => {
+            sceneEl.components.screenshot.capture('perspective');
         });
 
         // 閉じるボタンが押されたらプレビュー画面を非表示にする
