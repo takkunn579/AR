@@ -4,94 +4,71 @@
     <meta charset="utf-8">
     <title>AR Photo Booth</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- ライブラリをより新しく安定したバージョンに更新 -->
+    <!-- ライブラリ -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
-    <!-- ジェスチャー（ピンチ操作など）用のライブラリ -->
-    <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
+    <!-- 新しいUIで使うアイコンフォント -->
+    <link href="//fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
+    <!-- 【修正】UIデザインを新しい参照コードに合わせて変更 -->
     <style>
-        /* 撮影後のプレビュー画面のスタイル */
-        #preview {
-            /* 最初は非表示にしておく */
-            display: none; 
-            
-            /* 画面全体を覆う黒い半透明の背景 */
+        .ui {
+            position: absolute;
+            z-index: 100;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: auto;
+            margin: 0;
+            padding: 10px 15px 30px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .ui a {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            background-color: #ffffff;
+            line-height: 100%;
+            color: #303030;
+            margin: 10px 3px;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .ui a i {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            font-size: 28px;
+        }
+        .ui a:active {
+            color: #ff0000;
+        }
+        #snap {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.85);
-            z-index: 10000; /* 常に最前面に表示 */
-
-            /* 中の要素を中央に配置 */
-            justify-content: center;
-            align-items: center;
-            flex-direction: column; /* 要素を縦に並べる */
+            object-fit: contain; /* 画像の縦横比を維持 */
+            background-color: rgba(0,0,0,0.85);
+            z-index: 99;
+            visibility: hidden;
         }
-
-        /* 撮影した画像のスタイル */
-        #preview img {
-            max-width: 90%; /* 画面幅の90%を最大幅に */
-            max-height: 70%; /* 画面高さの70%を最大高に */
-            border: 2px solid white;
-            border-radius: 8px;
+        .ui a.disabled {
+            pointer-events: none;
+            color: #cccccc;
+            background-color: #f0f0f0;
         }
-
-        /* 操作案内のテキストスタイル */
-        #preview p {
-            color: white;
-            font-size: 18px;
-            font-family: sans-serif;
-            margin-top: 20px;
-            font-weight: bold;
-            text-align: center;
-            padding: 0 20px;
-        }
-
-        /* 閉じるボタンのスタイル */
-        #closeBtn {
-            margin-top: 15px;
-            padding: 12px 25px;
-            font-size: 16px;
-            background-color: #333;
-            color: white;
-            border: 1px solid white;
-            border-radius: 20px;
-            cursor: pointer;
-        }
-
-        /* 撮影ボタンのスタイル */
-        #captureBtn {
-            position: absolute;
-            bottom: 30px; /* 位置を下に変更 */
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            padding: 0;
-            width: 70px; /* 円形にする */
-            height: 70px;
-            border-radius: 50%;
-            font-size: 30px;
-            background-color: white;
-            border: 5px solid rgba(0, 0, 0, 0.3);
-            box-sizing: border-box;
+        #snap.visible {
+            visibility: visible;
         }
     </style>
 </head>
 
 <body style="margin: 0; overflow: hidden;">
-    <!-- 📷 撮影ボタン -->
-    <button id="captureBtn">📷</button>
-
-    <!-- 撮影した画像をプレビュー表示するための領域 -->
-    <div id="preview">
-        <img id="previewImage" src="" alt="キャプチャ画像">
-        <p id="previewText">画像を長押しして保存してください</p>
-        <button id="closeBtn">閉じる</button>
-    </div>
 
     <!-- ARシーン -->
     <a-scene
@@ -100,8 +77,6 @@
         renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true; preserveDrawingBuffer: true;"
         arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
         embedded
-        gesture-detector
-        <!-- 参考コードの方式を使うため、A-Frameのscreenshot機能を有効化 -->
         screenshot
     >
         <a-assets>
@@ -113,81 +88,99 @@
 
         <!-- マーカー1 → model1 -->
         <a-marker type="pattern" url="assets/marker1.patt">
-             <!-- 座標系を補正するための親エンティティ -->
              <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0.5 0" gesture-handler></a-entity>
+                <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0.5 0"></a-entity>
              </a-entity>
         </a-marker>
 
         <!-- マーカー2 → model2 -->
         <a-marker type="pattern" url="assets/marker2.patt">
-             <!-- 座標系を補正するための親エンティティ -->
              <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0.5 0" gesture-handler></a-entity>
+                <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0.5 0"></a-entity>
              </a-entity>
         </a-marker>
 
         <!-- マーカー3 → model3 -->
         <a-marker type="pattern" url="assets/marker3.patt">
-             <!-- 座標系を補正するための親エンティティ -->
              <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0.5 0" gesture-handler></a-entity>
+                <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0.5 0"></a-entity>
              </a-entity>
         </a-marker>
 
         <a-entity camera></a-entity>
     </a-scene>
 
-    <!-- 撮影スクリプト -->
+    <!-- 【修正】UIを新しい参照コードに合わせて変更 -->
+    <div class="ui">
+        <img id="snap">
+        <a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
+        <a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
+        <a href="#" id="download-photo" download="ar-photo.png" title="Save Photo" class="disabled" target="_blank"><i class="material-icons">file_download</i></a>
+    </div>
+
+    <!-- 【修正】撮影スクリプトを新しい参照コードベースに刷新 -->
     <script>
+        const image = document.querySelector('#snap');
+        const take_photo_btn = document.querySelector('#take-photo');
+        const delete_photo_btn = document.querySelector('#delete-photo');
+        const download_photo_btn = document.querySelector('#download-photo');
         const sceneEl = document.querySelector("a-scene");
-        const captureBtn = document.getElementById("captureBtn");
-        const preview = document.getElementById("preview");
-        const previewImage = document.getElementById("previewImage");
-        const previewText = document.getElementById("previewText");
-        const closeBtn = document.getElementById("closeBtn");
 
-        captureBtn.addEventListener("click", () => {
+        //スナップショットボタン
+        take_photo_btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            
+            const video = document.querySelector('video');
+            if (!video) return;
+
+            const snap = takeSnapshot(video);
+            if (!snap) return;
+
+            //スナップショット表示
+            image.setAttribute('src', snap);
+            image.classList.add('visible');
+
+            // 削除ボタンと保存ボタン有効
+            delete_photo_btn.classList.remove("disabled");
+            download_photo_btn.classList.remove("disabled");
+
+            // 保存ボタンにスナップショットを渡す
+            download_photo_btn.href = snap;
+        });
+
+        //削除ボタン
+        delete_photo_btn.addEventListener("click", function(e){
+            e.preventDefault();
+
+            // スナップショットを隠す
+            image.setAttribute('src', "");
+            image.classList.remove("visible");
+
+            // 削除ボタンと保存ボタン無効
+            delete_photo_btn.classList.add("disabled");
+            download_photo_btn.classList.add("disabled");
+        });
+
+        //スナップショットを撮る関数
+        function takeSnapshot(video) {
             try {
-                // ARの映像と3Dモデルを合成して撮影する
-                const video = document.querySelector('video'); // AR.jsが生成するvideo要素
-                
-                // A-Frameのscreenshotコンポーネントを使って3Dモデルが描画されたcanvasを取得
                 const aSceneCanvas = sceneEl.components.screenshot.getCanvas("perspective");
-
-                if (!video || !aSceneCanvas) {
-                    console.error('ARの映像または3Dシーンが見つかりません。');
-                    // 【修正】エラーメッセージをユーザーに表示
-                    previewText.textContent = "エラー: ARシーンを読み込めません。";
-                    previewImage.style.display = 'none';
-                    preview.style.display = "flex";
-                    return;
-                }
-
                 const videoWidth = video.videoWidth;
                 const videoHeight = video.videoHeight;
 
-                // 【修正】カメラ映像が準備できているかチェック
                 if (videoWidth === 0 || videoHeight === 0) {
-                    console.error("ビデオの解像度が取得できません。カメラが有効になるまでお待ちください。");
-                    // 【修正】準備中メッセージをユーザーに表示
-                    previewText.textContent = "カメラの準備中です。少し待ってからもう一度お試しください。";
-                    previewImage.style.display = 'none';
-                    preview.style.display = "flex";
-                    return;
+                    alert("カメラの準備ができていません。少し待ってからもう一度お試しください。");
+                    return null;
                 }
-
-                // 最終的な画像を生成するための一時的なcanvasを作成
-                const compositeCanvas = document.createElement('canvas');
-                const ctx = compositeCanvas.getContext('2d');
-
-                // canvasのサイズをカメラ映像の実際の解像度に合わせる
-                compositeCanvas.width = videoWidth;
-                compositeCanvas.height = videoHeight;
-
-                // 1. 背景として、現在のカメラ映像を描画
-                ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
                 
+                const canvas = document.createElement("canvas");
+                const context = canvas.getContext("2d");
+                canvas.width = videoWidth;
+                canvas.height = videoHeight;
+
+                // 1. 背景としてビデオ映像を描画
+                context.drawImage(video, 0, 0, videoWidth, videoHeight);
+
                 // 2. その上に3Dモデル(A-Frame canvas)を重ねる
                 const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
                 const videoAspectRatio = videoWidth / videoHeight;
@@ -201,7 +194,7 @@
                     offsetX = 0;
                     offsetY = (videoHeight - drawHeight) / 2;
                 } else {
-                    // シーンの方が縦長 → 縦を基準に縮小
+                    // シーンの方が縦長または同じ → 縦を基準に縮小
                     drawHeight = videoHeight;
                     drawWidth = videoHeight * sceneAspectRatio;
                     offsetX = (videoWidth - drawWidth) / 2;
@@ -209,32 +202,16 @@
                 }
 
                 // アスペクト比を維持して中央に描画
-                ctx.drawImage(aSceneCanvas, offsetX, offsetY, drawWidth, drawHeight);
+                context.drawImage(aSceneCanvas, offsetX, offsetY, drawWidth, drawHeight);
                 
-                // 3. 合成したcanvasから画像データ(DataURL)を生成
-                const dataURL = compositeCanvas.toDataURL('image/png');
+                return canvas.toDataURL('image/png');
 
-                // プレビュー用のimgタグに画像データを設定
-                previewImage.src = dataURL;
-                // 【修正】プレビュー表示の際に、必ず画像とテキストを正しい状態に戻す
-                previewImage.style.display = 'block';
-                previewText.textContent = "画像を長押しして保存してください";
-                
-                // プレビュー画面を表示
-                preview.style.display = "flex";
             } catch (error) {
-                console.error("撮影中に予期せぬエラーが発生しました:", error);
-                // 【修正】予期せぬエラーメッセージをユーザーに表示
-                previewText.textContent = "撮影中にエラーが発生しました。ページを再読み込みしてください。";
-                previewImage.style.display = 'none';
-                preview.style.display = "flex";
+                console.error("撮影エラー:", error);
+                alert("撮影中にエラーが発生しました。");
+                return null;
             }
-        });
-
-        // 閉じるボタンが押されたらプレビュー画面を非表示にする
-        closeBtn.addEventListener("click", () => {
-            preview.style.display = "none";
-        });
+        }
     </script>
 </body>
 </html>
