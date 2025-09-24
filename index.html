@@ -10,7 +10,7 @@
     <!-- 新しいUIで使うアイコンフォント -->
     <link href="//fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-    <!-- 【修正】UIデザインを新しい参照コードに合わせて変更 -->
+    <!-- UIデザイン -->
     <style>
         .ui {
             position: absolute;
@@ -89,30 +89,31 @@
         <!-- マーカー1 → model1 -->
         <a-marker type="pattern" url="assets/marker1.patt">
              <a-entity rotation="-90 0 0">
-                <!-- 【追加】原因切り分け用のテスト用BOX -->
-                <a-box position="0 0.5 0" scale="0.5 0.5 0.5" material="color: red; opacity: 0.5;"></a-box>
-                <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0.5 0"></a-entity>
+                <!-- 【修正】positionを0に戻す -->
+                <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
              </a-entity>
         </a-marker>
 
         <!-- マーカー2 → model2 -->
         <a-marker type="pattern" url="assets/marker2.patt">
              <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0.5 0"></a-entity>
+                <!-- 【修正】positionを0に戻す -->
+                <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
              </a-entity>
         </a-marker>
 
         <!-- マーカー3 → model3 -->
         <a-marker type="pattern" url="assets/marker3.patt">
              <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0.5 0"></a-entity>
+                <!-- 【修正】positionを0に戻す -->
+                <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
              </a-entity>
         </a-marker>
 
         <a-entity camera></a-entity>
     </a-scene>
 
-    <!-- 【修正】UIを新しい参照コードに合わせて変更 -->
+    <!-- UI -->
     <div class="ui">
         <img id="snap">
         <a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
@@ -120,7 +121,7 @@
         <a href="#" id="download-photo" download="ar-photo.png" title="Save Photo" class="disabled" target="_blank"><i class="material-icons">file_download</i></a>
     </div>
 
-    <!-- 【修正】撮影スクリプトを新しい参照コードベースに刷新 -->
+    <!-- 撮影スクリプト -->
     <script>
         const image = document.querySelector('#snap');
         const take_photo_btn = document.querySelector('#take-photo');
@@ -184,27 +185,28 @@
                 context.drawImage(video, 0, 0, videoWidth, videoHeight);
 
                 // 2. その上に3Dモデル(A-Frame canvas)を重ねる
+                // 【修正】アスペクト比の違う映像を正しくクロップして合成するロジックに変更
                 const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
                 const videoAspectRatio = videoWidth / videoHeight;
-
-                let drawWidth, drawHeight, offsetX, offsetY;
+                
+                let sx, sy, sWidth, sHeight;
 
                 if (sceneAspectRatio > videoAspectRatio) {
-                    // シーンの方が横長 → 横を基準に縮小
-                    drawWidth = videoWidth;
-                    drawHeight = videoWidth / sceneAspectRatio;
-                    offsetX = 0;
-                    offsetY = (videoHeight - drawHeight) / 2;
+                    // シーンがビデオより横長の場合、シーンの左右をクロップ
+                    sHeight = aSceneCanvas.height;
+                    sWidth = sHeight * videoAspectRatio;
+                    sx = (aSceneCanvas.width - sWidth) / 2;
+                    sy = 0;
                 } else {
-                    // シーンの方が縦長または同じ → 縦を基準に縮小
-                    drawHeight = videoHeight;
-                    drawWidth = videoHeight * sceneAspectRatio;
-                    offsetX = (videoWidth - drawWidth) / 2;
-                    offsetY = 0;
+                    // シーンがビデオより縦長の場合、シーンの上下をクロップ
+                    sWidth = aSceneCanvas.width;
+                    sHeight = sWidth / videoAspectRatio;
+                    sx = 0;
+                    sy = (aSceneCanvas.height - sHeight) / 2;
                 }
-
-                // アスペクト比を維持して中央に描画
-                context.drawImage(aSceneCanvas, offsetX, offsetY, drawWidth, drawHeight);
+                
+                // クロップしたソース部分を、描画先キャンバス全体に描画
+                context.drawImage(aSceneCanvas, sx, sy, sWidth, sHeight, 0, 0, videoWidth, videoHeight);
                 
                 return canvas.toDataURL('image/png');
 
