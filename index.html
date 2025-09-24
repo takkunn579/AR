@@ -37,7 +37,7 @@
 
       <!-- マーカー1 → model1 -->
       <!-- サンプルとしてhiroマーカーを使用します -->
-      <a-marker preset="hiro">
+      <a-marker type="pattern" url="assets/marker1.patt">
         <!--
           【修正点2】
           エラーの原因となっていた 'gesture-handler' を削除しました。
@@ -52,7 +52,7 @@
 
       <!-- マーカー2 → model2 -->
       <!-- サンプルとしてkanjiマーカーを使用します -->
-      <a-marker preset="kanji">
+      <a-marker type="pattern" url="assets/marker2.patt">
         <a-entity
           gltf-model="#model2"
           scale="1.5 1.5 1.5"
