@@ -159,31 +159,20 @@
 
             // 1. 背景として、現在のカメラ映像を描画
             ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
-
+            
             // 2. その上に、3Dモデルが描画されているA-Frameのcanvasを重ねて描画
-            // 【修正】カメラ映像と3Dシーンの縦横比の不一致を補正し、モデルが歪まないように修正
-            const videoAspectRatio = videoWidth / videoHeight;
+            // 【修正】3Dシーンの縦横比を維持したまま、ビデオ映像の中央に描画する方式に変更
             const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
 
-            let sx, sy, sWidth, sHeight;
+            // 3Dシーンをビデオの幅に合わせて拡縮した場合の高さを計算
+            const scaledSceneHeight = videoWidth / sceneAspectRatio;
 
-            // 3Dシーンのキャンバス(aSceneCanvas)から、ビデオの縦横比に合った部分を切り出して描画する
-            if (sceneAspectRatio > videoAspectRatio) {
-                // シーンがビデオより横長の場合、シーンの左右をクロップ
-                sHeight = aSceneCanvas.height;
-                sWidth = sHeight * videoAspectRatio;
-                sx = (aSceneCanvas.width - sWidth) / 2;
-                sy = 0;
-            } else {
-                // シーンがビデオより縦長の場合、シーンの上下をクロップ
-                sWidth = aSceneCanvas.width;
-                sHeight = sWidth / videoAspectRatio;
-                sx = 0;
-                sy = (aSceneCanvas.height - sHeight) / 2;
-            }
-            
-            // クロップしたソース部分を、描画先キャンバス全体に描画
-            ctx.drawImage(aSceneCanvas, sx, sy, sWidth, sHeight, 0, 0, videoWidth, videoHeight);
+            // ビデオの中央に配置するためのY座標（縦の開始位置）を計算
+            const sceneY = (videoHeight - scaledSceneHeight) / 2;
+
+            // 3Dシーンのキャンバス全体を、計算した位置とサイズで描画する
+            // これにより、モデルの縦横比が維持される
+            ctx.drawImage(aSceneCanvas, 0, sceneY, videoWidth, scaledSceneHeight);
             
             // 3. 合成したcanvasから画像データ(DataURL)を生成
             const dataURL = compositeCanvas.toDataURL('image/png');
