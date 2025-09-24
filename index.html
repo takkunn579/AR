@@ -99,7 +99,7 @@
         arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
         embedded
         gesture-detector
-        <!-- 【修正点1】参考コードの方式を使うため、A-Frameのscreenshot機能を再度有効化 -->
+        <!-- 参考コードの方式を使うため、A-Frameのscreenshot機能を有効化 -->
         screenshot
     >
         <a-assets>
@@ -127,7 +127,7 @@
         <a-entity camera></a-entity>
     </a-scene>
 
-    <!-- 【修正点2】撮影スクリプトを、参考コードのロジックを元に全面的に書き換え -->
+    <!-- 【修正】撮影スクリプトを、ご提示のコードを参考に修正 -->
     <script>
         const sceneEl = document.querySelector("a-scene");
         const captureBtn = document.getElementById("captureBtn");
@@ -161,18 +161,8 @@
             ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
 
             // 2. その上に、3Dモデルが描画されているA-Frameのcanvasを重ねて描画
-            //    参考コードのロジックを元に、画面の向きに応じて描画方法を調整
-            if (videoWidth > videoHeight) {
-                // 横長の映像の場合 (PCなど)
-                ctx.drawImage(aSceneCanvas, 0, 0, videoWidth, videoHeight);
-            } else {
-                // 縦長の映像の場合 (スマートフォンなど)
-                // 縦横比を維持しつつ、中央にモデルを描画する
-                const scale = videoHeight / videoWidth;
-                const scaledWidth = videoHeight * (aSceneCanvas.width / aSceneCanvas.height);
-                const marginLeft = (videoWidth - scaledWidth) / 2;
-                ctx.drawImage(aSceneCanvas, marginLeft, 0, scaledWidth, videoHeight);
-            }
+            //    【修正】ご提示のコードのロジックに基づき、単純に重ねる方式に変更
+            ctx.drawImage(aSceneCanvas, 0, 0, videoWidth, videoHeight);
             
             // 3. 合成したcanvasから画像データ(DataURL)を生成
             const dataURL = compositeCanvas.toDataURL('image/png');
