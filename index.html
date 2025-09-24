@@ -176,7 +176,6 @@
                 // 1. 背景としてビデオ映像を描画
                 context.drawImage(video, 0, 0, videoWidth, videoHeight);
 
-                // 【修正】アスペクト比の違う映像を正しくクロップして合成するロジックに変更
                 // 2. 3Dモデルのシーンを重ねる
                 const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
                 const videoAspectRatio = videoWidth / videoHeight;
@@ -197,8 +196,13 @@
                     sy = (aSceneCanvas.height - sHeight) / 2;
                 }
                 
-                // クロップしたソース部分を、描画先キャンバス全体に描画
-                context.drawImage(aSceneCanvas, sx, sy, sWidth, sHeight, 0, 0, videoWidth, videoHeight);
+                // 【修正】ご提案を反映し、モデルを縦に少し引き伸ばして補正
+                const stretchFactor = 1.1; // 1.1 = 10%縦に伸ばす。この値を調整して見栄えを調整してください。
+                const stretchedHeight = videoHeight * stretchFactor;
+                const yOffset = (videoHeight - stretchedHeight) / 2; // 中央に配置
+
+                // クロップしたソース部分を、描画先キャンバスに縦に引き伸ばして描画
+                context.drawImage(aSceneCanvas, sx, sy, sWidth, sHeight, 0, yOffset, videoWidth, stretchedHeight);
                 
                 return canvas.toDataURL('image/png');
 
