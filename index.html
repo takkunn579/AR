@@ -196,16 +196,16 @@
                     sy = (aSceneCanvas.height - sHeight) / 2;
                 }
                 
-                // 【修正】ご提示のコードを元に、シーン出力を縦方向に引き伸ばして描画
-                const stretchY = 1.0; // 縦に2倍
-                const stretchedHeight = videoHeight * stretchY;
-                const offsetY = (videoHeight - stretchedHeight) / 2; // 中央に配置
+                // 【修正】モデルの見た目を意図的に縦に引き伸ばして補正する
+                const stretchFactor = 1.5; // 1.5 = 見た目を50%縦に伸ばす。この値を調整してください。
 
-                context.drawImage(
-                    aSceneCanvas,
-                    sx, sy, sWidth, sHeight,       // ソース領域
-                    0, offsetY, videoWidth, stretchedHeight // 描画先（縦に拡大）
-                );
+                // 縦に圧縮したソースの高さを計算
+                const squishedSHeight = sHeight / stretchFactor;
+                // 中央から圧縮するように、Y座標の開始位置を調整
+                const squishedSY = sy + (sHeight - squishedSHeight) / 2;
+
+                // 縦に圧縮したソース領域を、描画先キャンバス全体に描画することで、結果的に引き伸ばす
+                context.drawImage(aSceneCanvas, sx, squishedSY, sWidth, squishedSHeight, 0, 0, videoWidth, videoHeight);
                 
                 return canvas.toDataURL('image/png');
 
@@ -218,4 +218,3 @@
     </script>
 </body>
 </html>
-
