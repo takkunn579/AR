@@ -196,16 +196,9 @@
                     sy = (aSceneCanvas.height - sHeight) / 2;
                 }
                 
-                // 【修正】モデルの見た目を意図的に縦に引き伸ばして補正する
-                const stretchFactor = 4; // 1.5 = 見た目を50%縦に伸ばす。この値を調整してください。
-
-                // 縦に圧縮したソースの高さを計算
-                const squishedSHeight = sHeight / stretchFactor;
-                // 中央から圧縮するように、Y座標の開始位置を調整
-                const squishedSY = sy + (sHeight - squishedSHeight) / 2;
-
-                // 縦に圧縮したソース領域を、描画先キャンバス全体に描画することで、結果的に引き伸ばす
-                context.drawImage(aSceneCanvas, sx, squishedSY, sWidth, squishedSHeight, 0, 0, videoWidth, videoHeight);
+                // 【修正】意図的な引き伸ばし処理を削除し、モデルが歪む問題を修正
+                // クロップしたソース部分を、描画先キャンバス全体に描画する
+                context.drawImage(aSceneCanvas, sx, sy, sWidth, sHeight, 0, 0, videoWidth, videoHeight);
                 
                 return canvas.toDataURL('image/png');
 
@@ -218,3 +211,4 @@
     </script>
 </body>
 </html>
+
