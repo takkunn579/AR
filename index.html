@@ -111,25 +111,25 @@
 
         <!-- マーカー1 → model1 -->
         <a-marker type="pattern" url="assets/marker1.patt">
-             <!-- 【修正】座標系を補正するための親エンティティを追加 -->
+             <!-- 座標系を補正するための親エンティティ -->
              <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+                <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0.5 0" gesture-handler></a-entity>
              </a-entity>
         </a-marker>
 
         <!-- マーカー2 → model2 -->
         <a-marker type="pattern" url="assets/marker2.patt">
-             <!-- 【修正】座標系を補正するための親エンティティを追加 -->
+             <!-- 座標系を補正するための親エンティティ -->
              <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+                <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0.5 0" gesture-handler></a-entity>
              </a-entity>
         </a-marker>
 
         <!-- マーカー3 → model3 -->
         <a-marker type="pattern" url="assets/marker3.patt">
-             <!-- 【修正】座標系を補正するための親エンティティを追加 -->
+             <!-- 座標系を補正するための親エンティティ -->
              <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+                <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0.5 0" gesture-handler></a-entity>
              </a-entity>
         </a-marker>
 
@@ -167,8 +167,8 @@
             compositeCanvas.height = videoHeight;
 
             // 1. 背景として、現在のカメラ映像を描画
-            ctx.drawImage(aSceneCanvas, 0, sceneY, videoWidth, scaledSceneHeight);
-
+            ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+            
             // 2. その上に3Dモデル(A-Frame canvas)を重ねる
             const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
             const videoAspectRatio = videoWidth / videoHeight;
