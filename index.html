@@ -111,7 +111,7 @@
     </a-scene>
 
     <img id="snap">
-    <!-- 【修正】UIをシンプル化 -->
+    <!-- UIをシンプル化 -->
     <div class="ui">
         <a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
         <a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
@@ -138,7 +138,7 @@
             image.setAttribute('src', snap);
             image.classList.add('visible');
 
-            // 【修正】削除ボタンを有効化し、撮影ボタンを無効化
+            // 削除ボタンを有効化し、撮影ボタンを無効化
             delete_photo_btn.classList.remove("disabled");
             take_photo_btn.classList.add("disabled");
         });
@@ -151,7 +151,7 @@
             image.setAttribute('src', "");
             image.classList.remove("visible");
 
-            // 【修正】削除ボタンを無効化し、撮影ボタンを有効化
+            // 削除ボタンを無効化し、撮影ボタンを有効化
             delete_photo_btn.classList.add("disabled");
             take_photo_btn.classList.remove("disabled");
         });
@@ -176,28 +176,30 @@
                 // 1. 背景としてビデオ映像を描画
                 context.drawImage(video, 0, 0, videoWidth, videoHeight);
 
-                // 2. その上に3Dモデル(A-Frame canvas)を重ねる
+                // 【修正】ご提示のロジックに差し替え
+                // 2. 3Dモデルのシーンを縦横比を保持して重ねる
                 const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
                 const videoAspectRatio = videoWidth / videoHeight;
-                
-                let sx, sy, sWidth, sHeight;
+
+                let targetWidth, targetHeight, offsetX, offsetY;
 
                 if (sceneAspectRatio > videoAspectRatio) {
-                    // シーンがビデオより横長の場合、シーンの左右をクロップ
-                    sHeight = aSceneCanvas.height;
-                    sWidth = sHeight * videoAspectRatio;
-                    sx = (aSceneCanvas.width - sWidth) / 2;
-                    sy = 0;
+                    // シーンの方が横長 → 高さを基準にスケール
+                    targetHeight = videoHeight;
+                    targetWidth = videoHeight * sceneAspectRatio;
+                    offsetX = (videoWidth - targetWidth) / 2;
+                    offsetY = 0;
                 } else {
-                    // シーンがビデオより縦長の場合、シーンの上下をクロップ
-                    sWidth = aSceneCanvas.width;
-                    sHeight = sWidth / videoAspectRatio;
-                    sx = 0;
-                    sy = (aSceneCanvas.height - sHeight) / 2;
+                    // シーンの方が縦長 → 幅を基準にスケール
+                    targetWidth = videoWidth;
+                    targetHeight = videoWidth / sceneAspectRatio;
+                    offsetX = 0;
+                    offsetY = (videoHeight - targetHeight) / 2;
                 }
-                
-                // クロップしたソース部分を、描画先キャンバス全体に描画
-                context.drawImage(aSceneCanvas, sx, sy, sWidth, sHeight, 0, 0, videoWidth, videoHeight);
+
+                // 縦横比を維持したまま中央に描画
+                context.drawImage(aSceneCanvas, 0, 0, aSceneCanvas.width, aSceneCanvas.height,
+                                  offsetX, offsetY, targetWidth, targetHeight);
                 
                 return canvas.toDataURL('image/png');
 
