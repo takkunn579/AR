@@ -47,7 +47,6 @@
             color: #ff0000;
         }
         #snap {
-            /* 【修正】positionをfixedに戻し、画面全体を覆うようにする */
             position: fixed;
             top: 0;
             left: 0;
@@ -111,12 +110,11 @@
         <a-entity camera></a-entity>
     </a-scene>
 
-    <!-- 【修正】プレビュー画像とUIを分離 -->
     <img id="snap">
+    <!-- 【修正】UIをシンプル化 -->
     <div class="ui">
         <a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
         <a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
-        <a href="#" id="download-photo" download="ar-photo.png" title="Save Photo" class="disabled" target="_blank"><i class="material-icons">file_download</i></a>
     </div>
 
     <!-- 撮影スクリプト -->
@@ -124,7 +122,6 @@
         const image = document.querySelector('#snap');
         const take_photo_btn = document.querySelector('#take-photo');
         const delete_photo_btn = document.querySelector('#delete-photo');
-        const download_photo_btn = document.querySelector('#download-photo');
         const sceneEl = document.querySelector("a-scene");
 
         //スナップショットボタン
@@ -141,12 +138,9 @@
             image.setAttribute('src', snap);
             image.classList.add('visible');
 
-            // 削除ボタンと保存ボタン有効
+            // 【修正】削除ボタンを有効化し、撮影ボタンを無効化
             delete_photo_btn.classList.remove("disabled");
-            download_photo_btn.classList.remove("disabled");
-
-            // 保存ボタンにスナップショットを渡す
-            download_photo_btn.href = snap;
+            take_photo_btn.classList.add("disabled");
         });
 
         //削除ボタン
@@ -157,9 +151,9 @@
             image.setAttribute('src', "");
             image.classList.remove("visible");
 
-            // 削除ボタンと保存ボタン無効
+            // 【修正】削除ボタンを無効化し、撮影ボタンを有効化
             delete_photo_btn.classList.add("disabled");
-            download_photo_btn.classList.add("disabled");
+            take_photo_btn.classList.remove("disabled");
         });
 
         //スナップショットを撮る関数
