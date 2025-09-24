@@ -1,75 +1,158 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!-- A-Frame と AR.js -->
-  <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-  <script src="https://raw.githack.com/donmccurdy/aframe-extras/master/dist/aframe-extras.loaders.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
+    <meta charset="utf-8">
+    <title>AR Photo Booth</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- ライブラリをより新しく安定したバージョンに更新 -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <!-- ジェスチャー（ピンチ操作など）用のライブラリ -->
+    <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
+
+    <style>
+        /* 撮影後のプレビュー画面のスタイル */
+        #preview {
+            /* 最初は非表示にしておく */
+            display: none; 
+            
+            /* 画面全体を覆う黒い半透明の背景 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 10000; /* 常に最前面に表示 */
+
+            /* 中の要素を中央に配置 */
+            justify-content: center;
+            align-items: center;
+            flex-direction: column; /* 要素を縦に並べる */
+        }
+
+        /* 撮影した画像のスタイル */
+        #preview img {
+            max-width: 90%; /* 画面幅の90%を最大幅に */
+            max-height: 70%; /* 画面高さの70%を最大高に */
+            border: 2px solid white;
+            border-radius: 8px;
+        }
+
+        /* 操作案内のテキストスタイル */
+        #preview p {
+            color: white;
+            font-size: 18px;
+            font-family: sans-serif;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        /* 閉じるボタンのスタイル */
+        #closeBtn {
+            margin-top: 15px;
+            padding: 12px 25px;
+            font-size: 16px;
+            background-color: #333;
+            color: white;
+            border: 1px solid white;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        /* 撮影ボタンのスタイル */
+        #captureBtn {
+            position: absolute;
+            bottom: 30px; /* 位置を下に変更 */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            padding: 0;
+            width: 70px; /* 円形にする */
+            height: 70px;
+            border-radius: 50%;
+            font-size: 30px;
+            background-color: white;
+            border: 5px solid rgba(0, 0, 0, 0.3);
+            box-sizing: border-box;
+        }
+    </style>
 </head>
 
 <body style="margin: 0; overflow: hidden;">
-  <!-- 📷 撮影ボタン -->
-  <button id="captureBtn" 
-    style="position: absolute; top: 20px; right: 20px; z-index: 9999; padding: 10px; font-size: 16px;">
-    📷 撮影
-  </button>
+    <!-- 📷 撮影ボタン -->
+    <button id="captureBtn">📷</button>
 
-  <!-- ARシーン -->
-  <a-scene
-      vr-mode-ui="enabled: false;"
-      loading-screen="enabled: false;"
-      renderer="logarithmicDepthBuffer: true;"
-      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-      embedded
-      gesture-detector
-  >
-      <a-assets>
-          <!-- 複数モデル -->
-          <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
-          <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
-          <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
-      </a-assets>
+    <!-- 【変更点1】撮影した画像をプレビュー表示するための領域を追加 -->
+    <div id="preview">
+        <img id="previewImage" src="" alt="キャプチャ画像">
+        <p>画像を長押しして保存してください</p>
+        <button id="closeBtn">閉じる</button>
+    </div>
 
-      <!-- マーカー1 → model1 -->
-      <a-marker type="pattern" url="assets/marker1.patt">
-          <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" gesture-handler></a-entity>
-      </a-marker>
+    <!-- ARシーン -->
+    <a-scene
+        vr-mode-ui="enabled: false;"
+        loading-screen="enabled: false;"
+        renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true;"
+        arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+        embedded
+        gesture-detector
+    >
+        <a-assets>
+             <!-- 複数モデル -->
+             <!-- 注意: 外部サイトのモデルはCORS設定がないと読み込めない場合があります -->
+             <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
+             <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
+             <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
+        </a-assets>
 
-      <!-- マーカー2 → model2 -->
-      <a-marker type="pattern" url="assets/marker2.patt">
-          <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" gesture-handler></a-entity>
-      </a-marker>
+        <!-- マーカー1 → model1 -->
+        <a-marker type="pattern" url="assets/marker1.patt">
+             <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+        </a-marker>
 
-      <!-- マーカー3 → model3 -->
-      <a-marker type="pattern" url="assets/marker3.patt">
-          <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" gesture-handler></a-entity>
-      </a-marker>
+        <!-- マーカー2 → model2 -->
+        <a-marker type="pattern" url="assets/marker2.patt">
+             <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+        </a-marker>
 
-      <!-- Hiroマーカー → デモ用のアニメーション球体 -->
-      <a-marker preset="hiro">
-          <a-sphere scale=".25 .25 .25" position="0 .5 0" color="#111">
-              <a-animation attribute="position" to="0 1 0" direction="alternate" dur="2000" repeat="indefinite"></a-animation>
-          </a-sphere>
-      </a-marker>
+        <!-- マーカー3 → model3 -->
+        <a-marker type="pattern" url="assets/marker3.patt">
+             <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" gesture-handler></a--entity>
+        </a-marker>
 
-      <a-entity camera></a-entity>
-  </a-scene>
+        <a-entity camera></a-entity>
+    </a-scene>
 
-  <!-- 📷 撮影スクリプト -->
-  <script>
-    document.getElementById("captureBtn").addEventListener("click", function () {
-      var scene = document.querySelector("a-scene");
-      var canvas = scene.renderer.domElement;
-      var dataURL = canvas.toDataURL("image/png");
+    <!-- 【変更点2】撮影スクリプトを、ダウンロードではなくプレビュー表示するように変更 -->
+    <script>
+        const captureBtn = document.getElementById("captureBtn");
+        const preview = document.getElementById("preview");
+        const previewImage = document.getElementById("previewImage");
+        const closeBtn = document.getElementById("closeBtn");
 
-      // ダウンロードリンクを作成して保存
-      var a = document.createElement("a");
-      a.href = dataURL;
-      a.download = "capture.png";
-      a.click();
-    });
-  </script>
+        captureBtn.addEventListener("click", () => {
+            const sceneEl = document.querySelector("a-scene");
+            // preserveDrawingBuffer: true が必要
+            const canvas = sceneEl.canvas;
+            
+            // 画面をキャプチャして画像データに変換
+            const dataURL = canvas.toDataURL("image/png");
+            
+            // プレビュー用のimgタグに画像データを設定
+            previewImage.src = dataURL;
+            
+            // プレビュー画面を表示
+            preview.style.display = "flex";
+        });
+
+        // 閉じるボタンが押されたらプレビュー画面を非表示にする
+        closeBtn.addEventListener("click", () => {
+            preview.style.display = "none";
+        });
+    </script>
 </body>
 </html>
+
