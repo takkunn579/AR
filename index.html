@@ -167,9 +167,8 @@
             compositeCanvas.height = videoHeight;
 
             // 1. 背景として、現在のカメラ映像を描画
-            ctx.drawImage(aSceneCanvas, 0, 0, drawWidth, drawHeight);
+            ctx.drawImage(aSceneCanvas, 0, sceneY, videoWidth, scaledSceneHeight);
 
-            
             // 2. その上に3Dモデル(A-Frame canvas)を重ねる
             const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
             const videoAspectRatio = videoWidth / videoHeight;
