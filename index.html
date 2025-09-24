@@ -84,7 +84,7 @@
     <!-- 📷 撮影ボタン -->
     <button id="captureBtn">📷</button>
 
-    <!-- 【変更点1】撮影した画像をプレビュー表示するための領域を追加 -->
+    <!-- 撮影した画像をプレビュー表示するための領域 -->
     <div id="preview">
         <img id="previewImage" src="" alt="キャプチャ画像">
         <p>画像を長押しして保存してください</p>
@@ -95,7 +95,10 @@
     <a-scene
         vr-mode-ui="enabled: false;"
         loading-screen="enabled: false;"
-        renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true;"
+        
+        <!-- 【修正点1】rendererに preserveDrawingBuffer: true; を追加 -->
+        renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true; preserveDrawingBuffer: true;"
+
         arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
         embedded
         gesture-detector
@@ -120,13 +123,14 @@
 
         <!-- マーカー3 → model3 -->
         <a-marker type="pattern" url="assets/marker3.patt">
-             <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" gesture-handler></a--entity>
+             <!-- 【修正点2】終了タグのタイプミスを修正 -->
+             <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" gesture-handler></a-entity>
         </a-marker>
 
         <a-entity camera></a-entity>
     </a-scene>
 
-    <!-- 【変更点2】撮影スクリプトを、ダウンロードではなくプレビュー表示するように変更 -->
+    <!-- 撮影スクリプト -->
     <script>
         const captureBtn = document.getElementById("captureBtn");
         const preview = document.getElementById("preview");
@@ -135,7 +139,6 @@
 
         captureBtn.addEventListener("click", () => {
             const sceneEl = document.querySelector("a-scene");
-            // preserveDrawingBuffer: true が必要
             const canvas = sceneEl.canvas;
             
             // 画面をキャプチャして画像データに変換
