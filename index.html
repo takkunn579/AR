@@ -47,8 +47,8 @@
             color: #ff0000;
         }
         #snap {
-            /* 【修正】positionをfixedからabsoluteに変更し、UIボタンの背面に表示されるようにする */
-            position: absolute;
+            /* 【修正】positionをfixedに戻し、画面全体を覆うようにする */
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -111,9 +111,9 @@
         <a-entity camera></a-entity>
     </a-scene>
 
-    <!-- UI -->
+    <!-- 【修正】プレビュー画像とUIを分離 -->
+    <img id="snap">
     <div class="ui">
-        <img id="snap">
         <a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
         <a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
         <a href="#" id="download-photo" download="ar-photo.png" title="Save Photo" class="disabled" target="_blank"><i class="material-icons">file_download</i></a>
