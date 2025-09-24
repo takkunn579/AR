@@ -161,23 +161,29 @@
             ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
 
             // 2. その上に、3Dモデルが描画されているA-Frameのcanvasを重ねて描画
-            // 【修正】縦向き撮影時にモデルが圧縮される問題を修正
-            if (videoWidth >= videoHeight) {
-                // 横長または正方形の映像の場合
-                ctx.drawImage(aSceneCanvas, 0, 0, videoWidth, videoHeight);
+            // 【修正】カメラ映像と3Dシーンの縦横比の不一致を補正し、モデルが歪まないように修正
+            const videoAspectRatio = videoWidth / videoHeight;
+            const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
+
+            let sx, sy, sWidth, sHeight;
+
+            // 3Dシーンのキャンバス(aSceneCanvas)から、ビデオの縦横比に合った部分を切り出して描画する
+            if (sceneAspectRatio > videoAspectRatio) {
+                // シーンがビデオより横長の場合、シーンの左右をクロップ
+                sHeight = aSceneCanvas.height;
+                sWidth = sHeight * videoAspectRatio;
+                sx = (aSceneCanvas.width - sWidth) / 2;
+                sy = 0;
             } else {
-                // 縦長の映像の場合 (スマートフォンなど)
-                // 3Dシーンの縦横比を維持して描画する
-                const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
-                
-                // 映像の幅を基準に、3Dシーンの描画高さを計算
-                const drawnSceneHeight = videoWidth / sceneAspectRatio;
-                
-                // 縦方向の中央に配置するためのオフセットを計算
-                const yOffset = (videoHeight - drawnSceneHeight) / 2;
-                
-                ctx.drawImage(aSceneCanvas, 0, yOffset, videoWidth, drawnSceneHeight);
+                // シーンがビデオより縦長の場合、シーンの上下をクロップ
+                sWidth = aSceneCanvas.width;
+                sHeight = sWidth / videoAspectRatio;
+                sx = 0;
+                sy = (aSceneCanvas.height - sHeight) / 2;
             }
+            
+            // クロップしたソース部分を、描画先キャンバス全体に描画
+            ctx.drawImage(aSceneCanvas, sx, sy, sWidth, sHeight, 0, 0, videoWidth, videoHeight);
             
             // 3. 合成したcanvasから画像データ(DataURL)を生成
             const dataURL = compositeCanvas.toDataURL('image/png');
