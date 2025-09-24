@@ -1,80 +1,85 @@
 <!DOCTYPE html>
+
 <html>
-  <head>
-    <title>AR Animation Example</title>
-    <!--
-      A-Frame と AR.js のライブラリを、より新しく安定したバージョンに更新しました。
-    -->
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    
-    <!-- アニメーション再生用の aframe-extras ライブラリを追加 -->
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
-    
-  </head>
-  <body style="margin: 0; overflow: hidden;">
-    <!--
-      【修正点1】
-      エラーの原因となっていた、未定義のコンポーネント 'gesture-detector' を削除しました。
-      もし、ピンチ操作での拡大・縮小などが必要な場合は、別途ジェスチャー用のライブラリを追加する必要があります。
-    -->
-    <a-scene
-      vr-mode-ui="enabled: false;"
-      renderer="logarithmicDepthBuffer: true;"
-      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-      embedded
-    >
-      <!-- 3Dモデルのプリロード -->
-      <a-assets>
-        <!--
-          注意: ここで指定するGLBファイルには、あらかじめアニメーションデータが含まれている必要があります。
-          また、'assets/model3.glb' のようなローカルファイルは、ウェブサーバー経由で表示しないと読み込めない場合があります。
-        -->
-        <a-asset-item id="model1" src=assets/model1.glb"></a-asset-item>
-        <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
-        <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
-      </a-assets>
 
-      <!-- マーカー1 → model1 -->
-      <!-- サンプルとしてhiroマーカーを使用します -->
-      <a-marker type="pattern" url="assets/marker1.patt">
-        <!--
-          【修正点2】
-          エラーの原因となっていた 'gesture-handler' を削除しました。
-        -->
-        <a-entity
-          gltf-model="#model1"
-          scale="0.5 0.5 0.5"
-          position="0 0 0"
-          animation-mixer="clip: *; loop: repeat"
-        ></a-entity>
-      </a-marker>
+  <head>
 
-      <!-- マーカー2 → model2 -->
-      <!-- サンプルとしてkanjiマーカーを使用します -->
-      <a-marker type="pattern" url="assets/marker2.patt">
-        <a-entity
-          gltf-model="#model2"
-          scale="1.5 1.5 1.5"
-          position="0 0 0"
-          animation-mixer="clip: *; loop: repeat"
-        ></a-entity>
-      </a-marker>
+    <!-- A-Frame と AR.js 読み込み -->
 
-      <!-- マーカー3 → model3 -->
-      <!-- カスタムマーカーを使用する場合は、urlプロパティで.pattファイルを指定します -->
-      <a-marker type="pattern" url="assets/marker3.patt">
-        <a-entity
-          gltf-model="#model3"
-          scale="0.5 0.5 0.5"
-          position="0 0 0"
-          animation-mixer="clip: *; loop: repeat"
-        ></a-entity>
-      </a-marker>
+    <script src="https://aframe.io/releases/0.8.2/aframe.min.js"></script>
 
-      <!-- カメラ -->
-      <a-entity camera></a-entity>
-    </a-scene>
-  </body>
+    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/1.6.2/aframe/build/aframe-ar.js"></script>
+
+    <!-- （必要ならジェスチャー操作用JSを追加できます） -->
+
+  </head>
+
+  <body style="margin: 0; overflow: hidden;">
+
+    <a-scene
+
+      vr-mode-ui="enabled: false;"
+
+      renderer="logarithmicDepthBuffer: true;"
+
+      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+
+      embedded
+
+      gesture-detector
+
+    >
+
+      <!-- 3Dモデルのプリロード -->
+
+      <a-assets>
+
+        <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
+
+        <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
+
+        <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
+
+      </a-assets>
+
+
+
+      <!-- マーカー1 → model1 -->
+
+      <a-marker type="pattern" url="assets/marker1.patt">
+
+        <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+
+      </a-marker>
+
+
+
+      <!-- マーカー2 → model2 -->
+
+      <a-marker type="pattern" url="assets/marker2.patt">
+
+        <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+
+      </a-marker>
+
+
+
+      <!-- マーカー3 → model3 -->
+
+      <a-marker type="pattern" url="assets/marker3.patt">
+
+        <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" gesture-handler></a-entity>
+
+      </a-marker>
+
+
+
+      <!-- カメラ -->
+
+      <a-entity camera></a-entity>
+
+    </a-scene>
+
+  </body>
+
 </html>
-
