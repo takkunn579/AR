@@ -100,8 +100,7 @@
         embedded
         gesture-detector
         
-        <!-- 【修正点1】A-Frameのスクリーンショット機能を追加 -->
-        screenshot
+        <!-- 【修正点1】A-Frameのscreenshot機能は使わないので削除 -->
     >
         <a-assets>
              <!-- 複数モデル -->
@@ -128,7 +127,7 @@
         <a-entity camera></a-entity>
     </a-scene>
 
-    <!-- 【修正点2】撮影スクリプトをA-Frameのスクリーンショット機能を使うように変更 -->
+    <!-- 【修正点2】撮影スクリプトを、カメラ映像と3Dモデルを合成する方式に変更 -->
     <script>
         const sceneEl = document.querySelector("a-scene");
         const captureBtn = document.getElementById("captureBtn");
@@ -136,17 +135,40 @@
         const previewImage = document.getElementById("previewImage");
         const closeBtn = document.getElementById("closeBtn");
 
-        // A-Frameのスクリーンショット機能が完了したときに発生するイベントを待つ
-        sceneEl.addEventListener('screenshotcaptured', (event) => {
-            // プレビュー用のimgタグに画像データを設定
-            previewImage.src = event.detail.dataURL;
-            // プレビュー画面を表示
-            preview.style.display = 'flex';
-        });
-
-        // 撮影ボタンが押されたら、A-Frameの組み込みスクリーンショット機能を呼び出す
         captureBtn.addEventListener("click", () => {
-            sceneEl.components.screenshot.capture('perspective');
+            // ARの映像と3Dモデルを合成して撮影する
+            const video = document.querySelector('video'); // AR.jsが生成するvideo要素
+            const canvas = sceneEl.canvas;                 // A-Frameが描画するcanvas要素
+
+            if (!video || !canvas) {
+                console.error('ARの映像または3Dシーンが見つかりません。');
+                return;
+            }
+
+            // 最終的な画像を生成するための一時的なcanvasを作成
+            const compositeCanvas = document.createElement('canvas');
+            const ctx = compositeCanvas.getContext('2d');
+
+            // canvasのサイズをカメラ映像の実際の解像度に合わせる（縦横の圧縮を防ぐため）
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+            compositeCanvas.width = videoWidth;
+            compositeCanvas.height = videoHeight;
+
+            // 1. 背景として、現在のカメラ映像を描画
+            ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+
+            // 2. その上に、3Dモデルが描画されているA-Frameのcanvasを重ねて描画
+            ctx.drawImage(canvas, 0, 0, videoWidth, videoHeight);
+
+            // 3. 合成したcanvasから画像データ(DataURL)を生成
+            const dataURL = compositeCanvas.toDataURL('image/png');
+
+            // プレビュー用のimgタグに画像データを設定
+            previewImage.src = dataURL;
+            
+            // プレビュー画面を表示
+            preview.style.display = "flex";
         });
 
         // 閉じるボタンが押されたらプレビュー画面を非表示にする
