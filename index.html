@@ -158,7 +158,29 @@
             compositeCanvas.height = videoHeight;
 
             // 1. 背景として、現在のカメラ映像を描画
-            ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+            // 2. その上に3Dモデル(A-Frame canvas)を重ねる
+const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
+const videoAspectRatio = videoWidth / videoHeight;
+
+let drawWidth, drawHeight, offsetX, offsetY;
+
+if (sceneAspectRatio > videoAspectRatio) {
+    // シーンの方が横長 → 横を基準に縮小
+    drawWidth = videoWidth;
+    drawHeight = videoWidth / sceneAspectRatio;
+    offsetX = 0;
+    offsetY = (videoHeight - drawHeight) / 2;
+} else {
+    // シーンの方が縦長 → 縦を基準に縮小
+    drawHeight = videoHeight;
+    drawWidth = videoHeight * sceneAspectRatio;
+    offsetX = (videoWidth - drawWidth) / 2;
+    offsetY = 0;
+}
+
+// アスペクト比を維持して中央に描画
+ctx.drawImage(aSceneCanvas, offsetX, offsetY, drawWidth, drawHeight);
+
             
             // 2. その上に、3Dモデルが描画されているA-Frameのcanvasを重ねて描画
             // 【修正】3Dシーンの縦横比を維持したまま、ビデオ映像の中央に描画する方式に変更
