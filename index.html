@@ -196,16 +196,9 @@
                     sy = (aSceneCanvas.height - sHeight) / 2;
                 }
                 
-                // 【修正】ご提示のコードを元に、シーン出力を縦方向に引き伸ばして描画
-                const stretchY = 2.0; // 縦に2倍
-                const stretchedHeight = videoHeight * stretchY;
-                const offsetY = (videoHeight - stretchedHeight) / 2; // 中央に配置
-
-                context.drawImage(
-                    aSceneCanvas,
-                    sx, sy, sWidth, sHeight,       // ソース領域
-                    0, offsetY, videoWidth, stretchedHeight // 描画先（縦に拡大）
-                );
+                // 【修正】意図的な引き伸ばし処理を削除し、モデルが歪む問題を修正
+                // クロップしたソース部分を、描画先キャンバス全体に描画する
+                context.drawImage(aSceneCanvas, sx, sy, sWidth, sHeight, 0, 0, videoWidth, videoHeight);
                 
                 return canvas.toDataURL('image/png');
 
