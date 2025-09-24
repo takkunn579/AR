@@ -161,18 +161,28 @@
             ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
             
             // 2. その上に、3Dモデルが描画されているA-Frameのcanvasを重ねて描画
-            // 【修正】3Dシーンの縦横比を維持したまま、ビデオ映像の中央に描画する方式に変更
+            // 【修正】3Dモデルが歪まないよう、縦横比を維持してフィットさせるロジックに修正
+            const videoAspectRatio = videoWidth / videoHeight;
             const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
 
-            // 3Dシーンをビデオの幅に合わせて拡縮した場合の高さを計算
-            const scaledSceneHeight = videoWidth / sceneAspectRatio;
+            let destWidth, destHeight, destX, destY;
 
-            // ビデオの中央に配置するためのY座標（縦の開始位置）を計算
-            const sceneY = (videoHeight - scaledSceneHeight) / 2;
-
+            if (sceneAspectRatio > videoAspectRatio) {
+                // 3Dシーンがビデオより「横長」の場合 -> ビデオの幅に合わせる
+                destWidth = videoWidth;
+                destHeight = destWidth / sceneAspectRatio;
+                destX = 0;
+                destY = (videoHeight - destHeight) / 2;
+            } else {
+                // 3Dシーンがビデオより「縦長」または同じ比率の場合 -> ビデオの高さに合わせる
+                destHeight = videoHeight;
+                destWidth = destHeight * sceneAspectRatio;
+                destY = 0;
+                destX = (videoWidth - destWidth) / 2;
+            }
+            
             // 3Dシーンのキャンバス全体を、計算した位置とサイズで描画する
-            // これにより、モデルの縦横比が維持される
-            ctx.drawImage(aSceneCanvas, 0, sceneY, videoWidth, scaledSceneHeight);
+            ctx.drawImage(aSceneCanvas, destX, destY, destWidth, destHeight);
             
             // 3. 合成したcanvasから画像データ(DataURL)を生成
             const dataURL = compositeCanvas.toDataURL('image/png');
