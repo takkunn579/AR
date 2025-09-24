@@ -160,29 +160,29 @@
             // 1. 背景として、現在のカメラ映像を描画
             ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
             
-            // 2. その上に、3Dモデルが描画されているA-Frameのcanvasを重ねて描画
-            // 【修正】3Dモデルが歪まないよう、縦横比を維持してフィットさせるロジックに修正
-            const videoAspectRatio = videoWidth / videoHeight;
+            // 2. その上に3Dモデル(A-Frame canvas)を重ねる
+            // 【修正】ご提示いただいた、より正確なアスペクト比維持のロジックに変更
             const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
+            const videoAspectRatio = videoWidth / videoHeight;
 
-            let destWidth, destHeight, destX, destY;
+            let drawWidth, drawHeight, offsetX, offsetY;
 
             if (sceneAspectRatio > videoAspectRatio) {
-                // 3Dシーンがビデオより「横長」の場合 -> ビデオの幅に合わせる
-                destWidth = videoWidth;
-                destHeight = destWidth / sceneAspectRatio;
-                destX = 0;
-                destY = (videoHeight - destHeight) / 2;
+                // シーンの方が横長 → 横を基準に縮小
+                drawWidth = videoWidth;
+                drawHeight = videoWidth / sceneAspectRatio;
+                offsetX = 0;
+                offsetY = (videoHeight - drawHeight) / 2;
             } else {
-                // 3Dシーンがビデオより「縦長」または同じ比率の場合 -> ビデオの高さに合わせる
-                destHeight = videoHeight;
-                destWidth = destHeight * sceneAspectRatio;
-                destY = 0;
-                destX = (videoWidth - destWidth) / 2;
+                // シーンの方が縦長 → 縦を基準に縮小
+                drawHeight = videoHeight;
+                drawWidth = videoHeight * sceneAspectRatio;
+                offsetX = (videoWidth - drawWidth) / 2;
+                offsetY = 0;
             }
-            
-            // 3Dシーンのキャンバス全体を、計算した位置とサイズで描画する
-            ctx.drawImage(aSceneCanvas, destX, destY, destWidth, destHeight);
+
+            // アスペクト比を維持して中央に描画
+            ctx.drawImage(aSceneCanvas, offsetX, offsetY, drawWidth, drawHeight);
             
             // 3. 合成したcanvasから画像データ(DataURL)を生成
             const dataURL = compositeCanvas.toDataURL('image/png');
