@@ -176,30 +176,29 @@
                 // 1. 背景としてビデオ映像を描画
                 context.drawImage(video, 0, 0, videoWidth, videoHeight);
 
-                // 【修正】ご提示のロジックに差し替え
-                // 2. 3Dモデルのシーンを縦横比を保持して重ねる
+                // 【修正】アスペクト比の違う映像を正しくクロップして合成するロジックに変更
+                // 2. 3Dモデルのシーンを重ねる
                 const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
                 const videoAspectRatio = videoWidth / videoHeight;
-
-                let targetWidth, targetHeight, offsetX, offsetY;
+                
+                let sx, sy, sWidth, sHeight;
 
                 if (sceneAspectRatio > videoAspectRatio) {
-                    // シーンの方が横長 → 高さを基準にスケール
-                    targetHeight = videoHeight;
-                    targetWidth = videoHeight * sceneAspectRatio;
-                    offsetX = (videoWidth - targetWidth) / 2;
-                    offsetY = 0;
+                    // シーンがビデオより横長の場合、シーンの左右をクロップ
+                    sHeight = aSceneCanvas.height;
+                    sWidth = sHeight * videoAspectRatio;
+                    sx = (aSceneCanvas.width - sWidth) / 2;
+                    sy = 0;
                 } else {
-                    // シーンの方が縦長 → 幅を基準にスケール
-                    targetWidth = videoWidth;
-                    targetHeight = videoWidth / sceneAspectRatio;
-                    offsetX = 0;
-                    offsetY = (videoHeight - targetHeight) / 2;
+                    // シーンがビデオより縦長の場合、シーンの上下をクロップ
+                    sWidth = aSceneCanvas.width;
+                    sHeight = sWidth / videoAspectRatio;
+                    sx = 0;
+                    sy = (aSceneCanvas.height - sHeight) / 2;
                 }
-
-                // 縦横比を維持したまま中央に描画
-                context.drawImage(aSceneCanvas, 0, 0, aSceneCanvas.width, aSceneCanvas.height,
-                                  offsetX, offsetY, targetWidth, targetHeight);
+                
+                // クロップしたソース部分を、描画先キャンバス全体に描画
+                context.drawImage(aSceneCanvas, sx, sy, sWidth, sHeight, 0, 0, videoWidth, videoHeight);
                 
                 return canvas.toDataURL('image/png');
 
