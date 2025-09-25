@@ -187,6 +187,7 @@
 
                 // 【ここからが修正部分】
                 // 縦に2倍伸ばすため、ソース（切り抜き元）の高さを半分に圧縮します
+                const stretchY = 2.0; // 縦の伸縮率（2.0で2倍）
                 const sHeightStretched = sHeight / stretchY;
                 // 切り抜き位置が中央になるように、Y座標を調整します
                 const syStretched = sy + (sHeight - sHeightStretched) / 2;
