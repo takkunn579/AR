@@ -4,14 +4,69 @@
     <meta charset="utf-8">
     <title>AR Photo Booth</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script> 
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
-
+    <!-- ライブラリ -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <!-- 【追加】アニメーション用のライブラリ -->
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <!-- 新しいUIで使うアイコンフォント -->
     <link href="//fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
+    <!-- UIデザイン -->
     <style>
+        /* AR開始ボタンのスタイル */
+        #startButtonContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+        }
+        #startButton {
+            font-size: 24px;
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 2px solid white;
+            background-color: #333;
+            color: white;
+            cursor: pointer;
+        }
+        #startButtonContainer p {
+            color: white;
+            font-size: 18px;
+            margin-top: 20px;
+            font-family: sans-serif;
+        }
+
+        /* 【追加】アニメーション操作ボタンのコンテナ */
+        .animation-controls {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            background-color: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            padding: 5px;
+            display: none; /* マーカーが認識されたら表示 */
+        }
+        .animation-controls button {
+            background-color: #444;
+            color: white;
+            border: 1px solid white;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+
         .ui {
             position: absolute;
             z-index: 100;
@@ -70,6 +125,16 @@
 
 <body style="margin: 0; overflow: hidden;">
 
+    <!-- BGM用のaudio要素 -->
+    <audio id="bgm" src="assets/bgm.mp3" loop></audio>
+
+    <!-- AR開始ボタン -->
+    <div id="startButtonContainer">
+        <button id="startButton">ARを開始</button>
+        <p>タップすると音声が再生されます</p>
+    </div>
+
+    <!-- ARシーン -->
     <a-scene
         vr-mode-ui="enabled: false;"
         loading-screen="enabled: false;"
@@ -79,31 +144,32 @@
         screenshot
     >
         <a-assets>
-             <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
+             <!-- 複数モデル -->
+             <a-asset-item id="model1" src="assets/model1_with_animation.glb"></a-asset-item>
              <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
              <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
         </a-assets>
 
-        <a-marker type="pattern" url="assets/marker1.patt">
+        <!-- マーカー1 → model1 -->
+        <a-marker id="marker1" type="pattern" url="assets/marker1.patt">
              <a-entity rotation="-90 0 0">
-                 <a-entity 
-                     gltf-model="#model1" 
-                     scale="0.5 0.5 0.5" 
-                     position="0 0 0"
-                     animation-mixer="clip: Idle; loop: repeat"
-                 ></a-entity>
+                <!-- 【修正】IDを追加し、最初のクリップを指定 -->
+                <a-entity id="animated-model" gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0 0"
+                          animation-mixer="clip: idle; loop: repeat"></a-entity>
              </a-entity>
         </a-marker>
 
+        <!-- マーカー2 → model2 -->
         <a-marker type="pattern" url="assets/marker2.patt">
              <a-entity rotation="-90 0 0">
-                 <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
+                <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
              </a-entity>
         </a-marker>
 
+        <!-- マーカー3 → model3 -->
         <a-marker type="pattern" url="assets/marker3.patt">
              <a-entity rotation="-90 0 0">
-                 <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
+                <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
              </a-entity>
         </a-marker>
 
@@ -111,16 +177,38 @@
     </a-scene>
 
     <img id="snap">
+    <!-- UIをシンプル化 -->
     <div class="ui">
         <a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
         <a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
     </div>
 
+    <!-- 【追加】アニメーション操作ボタン -->
+    <div class="animation-controls" id="anim-controls">
+        <button id="play-idle">待機</button>
+        <button id="play-action">アクション</button>
+    </div>
+
+    <!-- 撮影スクリプト -->
     <script>
         const image = document.querySelector('#snap');
         const take_photo_btn = document.querySelector('#take-photo');
         const delete_photo_btn = document.querySelector('#delete-photo');
         const sceneEl = document.querySelector("a-scene");
+
+        // 音楽と開始ボタンの要素を取得
+        const startButtonContainer = document.getElementById('startButtonContainer');
+        const startButton = document.getElementById('startButton');
+        const bgm = document.getElementById('bgm');
+
+        // 開始ボタンの処理
+        startButton.addEventListener('click', () => {
+            // BGMを再生
+            bgm.play();
+            // 開始ボタンのコンテナを非表示にする
+            startButtonContainer.style.display = 'none';
+        });
+
 
         //スナップショットボタン
         take_photo_btn.addEventListener("click", function (e) {
@@ -153,6 +241,37 @@
             delete_photo_btn.classList.add("disabled");
             take_photo_btn.classList.remove("disabled");
         });
+        
+        // 【追加】ここからアニメーション制御のスクリプト
+        const animatedModel = document.getElementById('animated-model');
+        const marker1 = document.getElementById('marker1');
+        const animControls = document.getElementById('anim-controls');
+        const idleBtn = document.getElementById('play-idle');
+        const actionBtn = document.getElementById('play-action');
+
+        // マーカーが認識されたら操作ボタンを表示
+        marker1.addEventListener('markerFound', () => {
+            animControls.style.display = 'block';
+        });
+
+        // マーカーが見えなくなったら操作ボタンを非表示
+        marker1.addEventListener('markerLost', () => {
+            animControls.style.display = 'none';
+        });
+
+        // 「待機」ボタンの処理
+        idleBtn.addEventListener('click', () => {
+            // animation-mixerのclipプロパティを'idle'に変更
+            animatedModel.setAttribute('animation-mixer', 'clip', 'idle');
+        });
+
+        // 「アクション」ボタンの処理
+        actionBtn.addEventListener('click', () => {
+            // animation-mixerのclipプロパティを'action'に変更
+            // 注意: 'action'という名前のアニメーションがモデルに含まれている必要があります
+            animatedModel.setAttribute('animation-mixer', 'clip', 'action');
+        });
+
 
         //スナップショットを撮る関数
         function takeSnapshot(video) {
@@ -194,7 +313,7 @@
                     sy = (aSceneCanvas.height - sHeight) / 2;
                 }
                 
-                // アスペクト比を維持して描画
+                // クロップしたソース部分を、描画先キャンバス全体に描画する
                 context.drawImage(aSceneCanvas, sx, sy, sWidth, sHeight, 0, 0, videoWidth, videoHeight);
                 
                 return canvas.toDataURL('image/png');
@@ -208,3 +327,4 @@
     </script>
 </body>
 </html>
+
