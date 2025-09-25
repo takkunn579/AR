@@ -4,13 +4,10 @@
     <meta charset="utf-8">
     <title>AR Photo Booth</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- ライブラリ -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <!-- 新しいUIで使うアイコンフォント -->
     <link href="//fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-    <!-- UIデザイン -->
     <style>
         .ui {
             position: absolute;
@@ -70,7 +67,6 @@
 
 <body style="margin: 0; overflow: hidden;">
 
-    <!-- ARシーン -->
     <a-scene
         vr-mode-ui="enabled: false;"
         loading-screen="enabled: false;"
@@ -80,30 +76,26 @@
         screenshot
     >
         <a-assets>
-             <!-- 複数モデル -->
              <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
              <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
              <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
         </a-assets>
 
-        <!-- マーカー1 → model1 -->
         <a-marker type="pattern" url="assets/marker1.patt">
              <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
+                 <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
              </a-entity>
         </a-marker>
 
-        <!-- マーカー2 → model2 -->
         <a-marker type="pattern" url="assets/marker2.patt">
              <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
+                 <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
              </a-entity>
         </a-marker>
 
-        <!-- マーカー3 → model3 -->
         <a-marker type="pattern" url="assets/marker3.patt">
              <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
+                 <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
              </a-entity>
         </a-marker>
 
@@ -111,13 +103,11 @@
     </a-scene>
 
     <img id="snap">
-    <!-- UIをシンプル化 -->
     <div class="ui">
         <a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
         <a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
     </div>
 
-    <!-- 撮影スクリプト -->
     <script>
         const image = document.querySelector('#snap');
         const take_photo_btn = document.querySelector('#take-photo');
@@ -197,13 +187,13 @@
                 }
                 
                 // 【修正】ご提示のコードを元に、シーン出力を縦方向に引き伸ばして描画
-                const stretchY = 1.0; // 縦に2倍
+                const stretchY = 2.0; // 縦に2倍にしたい場合はここを2.0にする
                 const stretchedHeight = videoHeight * stretchY;
                 const offsetY = (videoHeight - stretchedHeight) / 2; // 中央に配置
 
                 context.drawImage(
                     aSceneCanvas,
-                    sx, sy, sWidth, sHeight,       // ソース領域
+                    sx, sy, sWidth, sHeight,     // ソース領域
                     0, offsetY, videoWidth, stretchedHeight // 描画先（縦に拡大）
                 );
                 
@@ -218,4 +208,3 @@
     </script>
 </body>
 </html>
-
