@@ -7,66 +7,11 @@
     <!-- ライブラリ -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <!-- 【追加】アニメーション用のライブラリ -->
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
     <!-- 新しいUIで使うアイコンフォント -->
     <link href="//fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <!-- UIデザイン -->
     <style>
-        /* AR開始ボタンのスタイル */
-        #startButtonContainer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            flex-direction: column;
-        }
-        #startButton {
-            font-size: 24px;
-            padding: 15px 30px;
-            border-radius: 10px;
-            border: 2px solid white;
-            background-color: #333;
-            color: white;
-            cursor: pointer;
-        }
-        #startButtonContainer p {
-            color: white;
-            font-size: 18px;
-            margin-top: 20px;
-            font-family: sans-serif;
-        }
-
-        /* 【追加】アニメーション操作ボタンのコンテナ */
-        .animation-controls {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            background-color: rgba(0,0,0,0.5);
-            border-radius: 10px;
-            padding: 5px;
-            display: none; /* マーカーが認識されたら表示 */
-        }
-        .animation-controls button {
-            background-color: #444;
-            color: white;
-            border: 1px solid white;
-            padding: 10px 15px;
-            margin: 5px;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-
         .ui {
             position: absolute;
             z-index: 100;
@@ -125,15 +70,6 @@
 
 <body style="margin: 0; overflow: hidden;">
 
-    <!-- BGM用のaudio要素 -->
-    <audio id="bgm" src="assets/bgm.mp3" loop></audio>
-
-    <!-- AR開始ボタン -->
-    <div id="startButtonContainer">
-        <button id="startButton">ARを開始</button>
-        <p>タップすると音声が再生されます</p>
-    </div>
-
     <!-- ARシーン -->
     <a-scene
         vr-mode-ui="enabled: false;"
@@ -145,17 +81,15 @@
     >
         <a-assets>
              <!-- 複数モデル -->
-             <a-asset-item id="model1" src="assets/model1_with_animation.glb"></a-asset-item>
+             <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
              <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
              <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
         </a-assets>
 
         <!-- マーカー1 → model1 -->
-        <a-marker id="marker1" type="pattern" url="assets/marker1.patt">
+        <a-marker type="pattern" url="assets/marker1.patt">
              <a-entity rotation="-90 0 0">
-                <!-- 【修正】IDを追加し、最初のクリップを指定 -->
-                <a-entity id="animated-model" gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0 0"
-                          animation-mixer="clip: idle; loop: repeat"></a-entity>
+                <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
              </a-entity>
         </a-marker>
 
@@ -183,12 +117,6 @@
         <a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
     </div>
 
-    <!-- 【追加】アニメーション操作ボタン -->
-    <div class="animation-controls" id="anim-controls">
-        <button id="play-idle">待機</button>
-        <button id="play-action">アクション</button>
-    </div>
-
     <!-- 撮影スクリプト -->
     <script>
         const image = document.querySelector('#snap');
@@ -196,47 +124,12 @@
         const delete_photo_btn = document.querySelector('#delete-photo');
         const sceneEl = document.querySelector("a-scene");
 
-        // 音楽と開始ボタンの要素を取得
-        const startButtonContainer = document.getElementById('startButtonContainer');
-        const startButton = document.getElementById('startButton');
-        const bgm = document.getElementById('bgm');
-
-        // 【追加】カメラの準備が完了したかどうかのフラグ
-        let videoReady = false;
-
-        // 【追加】ARシーンが読み込まれたら、ビデオの準備を監視する
-        sceneEl.addEventListener('loaded', () => {
-            const video = document.querySelector('video');
-            if (video) {
-                // video要素のメタデータ（サイズなど）が読み込まれたら実行
-                video.addEventListener('loadedmetadata', () => {
-                    // これでビデオの正しいサイズが確定
-                    videoReady = true;
-                });
-            }
-        });
-
-        // 開始ボタンの処理
-        startButton.addEventListener('click', () => {
-            // BGMを再生
-            bgm.play();
-            // 開始ボタンのコンテナを非表示にする
-            startButtonContainer.style.display = 'none';
-        });
-
-
         //スナップショットボタン
         take_photo_btn.addEventListener("click", function (e) {
             e.preventDefault();
             
             const video = document.querySelector('video');
             if (!video) return;
-
-            // 【追加】ビデオの準備が完了していない場合は、アラートを出して処理を中断
-            if (!videoReady || video.videoWidth === 0) {
-                alert("カメラの準備中です。画面に映像が表示されてから、もう一度お試しください。");
-                return;
-            }
 
             const snap = takeSnapshot(video);
             if (!snap) return;
@@ -262,37 +155,6 @@
             delete_photo_btn.classList.add("disabled");
             take_photo_btn.classList.remove("disabled");
         });
-        
-        // 【追加】ここからアニメーション制御のスクリプト
-        const animatedModel = document.getElementById('animated-model');
-        const marker1 = document.getElementById('marker1');
-        const animControls = document.getElementById('anim-controls');
-        const idleBtn = document.getElementById('play-idle');
-        const actionBtn = document.getElementById('play-action');
-
-        // マーカーが認識されたら操作ボタンを表示
-        marker1.addEventListener('markerFound', () => {
-            animControls.style.display = 'block';
-        });
-
-        // マーカーが見えなくなったら操作ボタンを非表示
-        marker1.addEventListener('markerLost', () => {
-            animControls.style.display = 'none';
-        });
-
-        // 「待機」ボタンの処理
-        idleBtn.addEventListener('click', () => {
-            // animation-mixerのclipプロパティを'idle'に変更
-            animatedModel.setAttribute('animation-mixer', 'clip', 'idle');
-        });
-
-        // 「アクション」ボタンの処理
-        actionBtn.addEventListener('click', () => {
-            // animation-mixerのclipプロパティを'action'に変更
-            // 注意: 'action'という名前のアニメーションがモデルに含まれている必要があります
-            animatedModel.setAttribute('animation-mixer', 'clip', 'action');
-        });
-
 
         //スナップショットを撮る関数
         function takeSnapshot(video) {
@@ -301,7 +163,6 @@
                 const videoWidth = video.videoWidth;
                 const videoHeight = video.videoHeight;
 
-                // このチェックは念のため残しておく
                 if (videoWidth === 0 || videoHeight === 0) {
                     alert("カメラの準備ができていません。少し待ってからもう一度お試しください。");
                     return null;
@@ -335,8 +196,16 @@
                     sy = (aSceneCanvas.height - sHeight) / 2;
                 }
                 
-                // クロップしたソース部分を、描画先キャンバス全体に描画する
-                context.drawImage(aSceneCanvas, sx, sy, sWidth, sHeight, 0, 0, videoWidth, videoHeight);
+                // 【修正】ご提示のコードを元に、シーン出力を縦方向に引き伸ばして描画
+                const stretchY = 1.0; // 縦に2倍
+                const stretchedHeight = videoHeight * stretchY;
+                const offsetY = (videoHeight - stretchedHeight) / 2; // 中央に配置
+
+                context.drawImage(
+                    aSceneCanvas,
+                    sx, sy, sWidth, sHeight,       // ソース領域
+                    0, offsetY, videoWidth, stretchedHeight // 描画先（縦に拡大）
+                );
                 
                 return canvas.toDataURL('image/png');
 
@@ -349,3 +218,4 @@
     </script>
 </body>
 </html>
+
