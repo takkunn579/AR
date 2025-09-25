@@ -201,6 +201,21 @@
         const startButton = document.getElementById('startButton');
         const bgm = document.getElementById('bgm');
 
+        // 【追加】カメラの準備が完了したかどうかのフラグ
+        let videoReady = false;
+
+        // 【追加】ARシーンが読み込まれたら、ビデオの準備を監視する
+        sceneEl.addEventListener('loaded', () => {
+            const video = document.querySelector('video');
+            if (video) {
+                // video要素のメタデータ（サイズなど）が読み込まれたら実行
+                video.addEventListener('loadedmetadata', () => {
+                    // これでビデオの正しいサイズが確定
+                    videoReady = true;
+                });
+            }
+        });
+
         // 開始ボタンの処理
         startButton.addEventListener('click', () => {
             // BGMを再生
@@ -216,6 +231,12 @@
             
             const video = document.querySelector('video');
             if (!video) return;
+
+            // 【追加】ビデオの準備が完了していない場合は、アラートを出して処理を中断
+            if (!videoReady || video.videoWidth === 0) {
+                alert("カメラの準備中です。画面に映像が表示されてから、もう一度お試しください。");
+                return;
+            }
 
             const snap = takeSnapshot(video);
             if (!snap) return;
@@ -280,6 +301,7 @@
                 const videoWidth = video.videoWidth;
                 const videoHeight = video.videoHeight;
 
+                // このチェックは念のため残しておく
                 if (videoWidth === 0 || videoHeight === 0) {
                     alert("カメラの準備ができていません。少し待ってからもう一度お試しください。");
                     return null;
@@ -327,4 +349,3 @@
     </script>
 </body>
 </html>
-
