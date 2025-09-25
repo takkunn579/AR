@@ -197,27 +197,8 @@
                 }
                 
                 // 【修正】意図的な引き伸ばし処理を削除し、モデルが歪む問題を修正
-                const stretchY = 2.0; // 縦に2倍
-const stretchedHeight = videoHeight * stretchY;
-
-// 描画先の中心座標
-const centerX = videoWidth / 2;
-const centerY = videoHeight / 2;
-
-// 画像の描画サイズ
-const drawWidth = videoWidth;
-const drawHeight = stretchedHeight;
-
-// 左上座標を計算して中心に配置
-const drawX = centerX - drawWidth / 2;
-const drawY = centerY - drawHeight / 2;
-
-// 描画
-context.drawImage(
-    aSceneCanvas,
-    sx, sy, sWidth, sHeight,   // ソース領域
-    drawX, drawY, drawWidth, drawHeight
-);
+                // 描画
+                context.drawImage(aSceneCanvas, sx, sy, sWidth, sHeight, 0, 0, videoWidth, videoHeight);
                 
                 return canvas.toDataURL('image/png');
 
