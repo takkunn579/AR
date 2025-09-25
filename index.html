@@ -76,27 +76,27 @@
         screenshot
     >
         <a-assets>
-             <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
-             <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
-             <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
+            <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
+            <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
+            <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
         </a-assets>
 
         <a-marker type="pattern" url="assets/marker1.patt">
-             <a-entity rotation="-90 0 0">
-                 <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
-             </a-entity>
+            <a-entity rotation="-90 0 0">
+                <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
+            </a-entity>
         </a-marker>
 
         <a-marker type="pattern" url="assets/marker2.patt">
-             <a-entity rotation="-90 0 0">
-                 <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
-             </a-entity>
+            <a-entity rotation="-90 0 0">
+                <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
+            </a-entity>
         </a-marker>
 
         <a-marker type="pattern" url="assets/marker3.patt">
-             <a-entity rotation="-90 0 0">
-                 <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
-             </a-entity>
+            <a-entity rotation="-90 0 0">
+                <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
+            </a-entity>
         </a-marker>
 
         <a-entity camera></a-entity>
@@ -169,32 +169,34 @@
                 // 2. 3Dモデルのシーンを重ねる
                 const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
                 const videoAspectRatio = videoWidth / videoHeight;
-                
+
                 let sx, sy, sWidth, sHeight;
 
+                // まず、ビデオのアスペクト比に合わせて3Dシーンをクロップする基本領域を計算
                 if (sceneAspectRatio > videoAspectRatio) {
-                    // シーンがビデオより横長の場合、シーンの左右をクロップ
                     sHeight = aSceneCanvas.height;
                     sWidth = sHeight * videoAspectRatio;
                     sx = (aSceneCanvas.width - sWidth) / 2;
                     sy = 0;
                 } else {
-                    // シーンがビデオより縦長の場合、シーンの上下をクロップ
                     sWidth = aSceneCanvas.width;
                     sHeight = sWidth / videoAspectRatio;
                     sx = 0;
                     sy = (aSceneCanvas.height - sHeight) / 2;
                 }
-                
-                // 【修正】ご提示のコードを元に、シーン出力を縦方向に引き伸ばして描画
-                const stretchY = 1.5; // 縦に2倍にしたい場合はここを2.0にする
-                const stretchedHeight = videoHeight * stretchY;
-                const offsetY = (videoHeight - stretchedHeight) / 2; // 中央に配置
 
+                // 【ここからが修正部分】
+                // 縦に2倍伸ばすため、ソース（切り抜き元）の高さを半分に圧縮します
+                const stretchY = 2.0; // 縦の伸縮率（2.0で2倍）
+                const sHeightStretched = sHeight / stretchY;
+                // 切り抜き位置が中央になるように、Y座標を調整します
+                const syStretched = sy + (sHeight - sHeightStretched) / 2;
+
+                // 縦に圧縮したソース領域を、ビデオ全体の描画先に描画することで、結果的に縦に伸びる
                 context.drawImage(
                     aSceneCanvas,
-                    sx, sy, sWidth, sHeight,     // ソース領域
-                    0, offsetY, videoWidth, stretchedHeight // 描画先（縦に拡大）
+                    sx, syStretched, sWidth, sHeightStretched, // ソース領域（縦に圧縮して切り抜く）
+                    0, 0, videoWidth, videoHeight             // 描画先（ビデオ全体）
                 );
                 
                 return canvas.toDataURL('image/png');
