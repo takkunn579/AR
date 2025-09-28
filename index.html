@@ -151,17 +151,24 @@
         //スナップショットを撮る関数
 function takeSnapshot() {
     try {
-        // A-Frameが出しているスクショ (背景映像 + 3Dモデル)
         const canvas = sceneEl.components.screenshot.getCanvas('perspective');
         if (!canvas) return null;
 
-        return canvas.toDataURL('image/png');
+        // ★ スマホ画面サイズに強制リサイズ
+        const finalCanvas = document.createElement("canvas");
+        finalCanvas.width = window.innerWidth;
+        finalCanvas.height = window.innerHeight;
+
+        const ctx = finalCanvas.getContext("2d");
+        ctx.drawImage(canvas, 0, 0, finalCanvas.width, finalCanvas.height);
+
+        return finalCanvas.toDataURL("image/png");
     } catch (error) {
         console.error("撮影エラー:", error);
-        alert("撮影中にエラーが発生しました。");
         return null;
     }
 }
+
 
     </script>
 </body>
