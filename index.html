@@ -1,73 +1,204 @@
+<!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
-    <title>A-Frame Snapshot Example</title>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <!-- html2canvasを利用してHTML全体をスクショ -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-      body, html {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background: #000;
-      }
-      #snapshotBtn {
-        position: absolute;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 10px 20px;
-        font-size: 16px;
-        background: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        z-index: 10;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- A-Frameシーン -->
-    <a-scene id="scene" embedded>
-      <a-assets>
-        <img id="bg" src="https://cdn.aframe.io/a-painter/images/sky.jpg">
-      </a-assets>
-      <a-sky src="#bg"></a-sky>
-      <a-box position="0 1.5 -3" rotation="0 45 0" color="#4CC3D9"></a-box>
-      <a-sphere position="2 1.25 -5" radius="1.25" color="#EF2D5E"></a-sphere>
-      <a-plane position="0 0 -4" rotation="-90 0 0" width="10" height="10" color="#7BC8A4"></a-plane>
-      <a-entity camera look-controls></a-entity>
-    </a-scene>
+    <title>AR Photo Booth</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <link href="//fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-    <!-- 撮影ボタン -->
-    <button id="snapshotBtn">📷 撮影＆ダウンロード</button>
+    <style>
+        /* CSSに変更はありません */
+        .ui {
+            position: absolute;
+            z-index: 100;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: auto;
+            margin: 0;
+            padding: 10px 15px 30px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .ui a {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            background-color: #ffffff;
+            line-height: 100%;
+            color: #303030;
+            margin: 10px 3px;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .ui a i {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            font-size: 28px;
+        }
+        .ui a:active {
+            color: #ff0000;
+        }
+        #snap {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* 画像の縦横比を維持 */
+            background-color: rgba(0,0,0,0.85);
+            z-index: 99; /* UI(z-index: 100)より背面に配置 */
+            visibility: hidden;
+        }
+        .ui a.disabled {
+            pointer-events: none;
+            color: #cccccc;
+            background-color: #f0f0f0;
+        }
+        #snap.visible {
+            visibility: visible;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; overflow: hidden;">
+
+    <a-scene
+        vr-mode-ui="enabled: false;"
+        loading-screen="enabled: false;"
+        renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true; preserveDrawingBuffer: true; alpha: true;"
+        arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+        embedded
+        screenshot
+    >
+        <a-assets>
+            <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
+            <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
+            <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
+        </a-assets>
+
+        <a-marker type="pattern" url="assets/marker1.patt">
+            <a-entity rotation="-90 0 0">
+                <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
+            </a-entity>
+        </a-marker>
+
+        <a-marker type="pattern" url="assets/marker2.patt">
+            <a-entity rotation="-90 0 0">
+                <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
+            </a-entity>
+        </a-marker>
+
+        <a-marker type="pattern" url="assets/marker3.patt">
+            <a-entity rotation="-90 0 0">
+                <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
+            </a-entity>
+        </a-marker>
+
+        <a-entity camera></a-entity>
+        
+    </a-scene> <img id="snap">
+    <div class="ui">
+        <a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
+        <a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
+    </div>
 
     <script>
-      document.getElementById("snapshotBtn").addEventListener("click", async () => {
-        try {
-          const scene = document.getElementById("scene");
+        // JavaScriptに変更はありません
+        const image = document.querySelector('#snap');
+        const take_photo_btn = document.querySelector('#take-photo');
+        const delete_photo_btn = document.querySelector('#delete-photo');
+        const sceneEl = document.querySelector("a-scene");
 
-          // html2canvasでA-Frameシーン全体をキャプチャ
-          const canvas = await html2canvas(scene, {
-            useCORS: true,
-            backgroundColor: null // 透明や背景を正しく取る
-          });
+        //スナップショットボタン
+        take_photo_btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            
+            const video = document.querySelector('video');
+            if (!video) return;
 
-          // DataURL化
-          const dataURL = canvas.toDataURL("image/png");
+            const snap = takeSnapshot(video);
+            if (!snap) return;
 
-          // ダウンロードリンク作成
-          const link = document.createElement("a");
-          link.href = dataURL;
-          link.download = "snapshot.png";
-          link.click();
+            //スナップショット表示
+            image.setAttribute('src', snap);
+            image.classList.add('visible');
 
-        } catch (err) {
-          console.error("撮影エラー:", err);
-          alert("スクショ中にエラーが発生しました。");
+            // 削除ボタンを有効化し、撮影ボタンを無効化
+            delete_photo_btn.classList.remove("disabled");
+            take_photo_btn.classList.add("disabled");
+        });
+
+        //削除ボタン
+        delete_photo_btn.addEventListener("click", function(e){
+            e.preventDefault();
+
+            // スナップショットを隠す
+            image.setAttribute('src', "");
+            image.classList.remove("visible");
+
+            // 削除ボタンを無効化し、撮影ボタンを有効化
+            delete_photo_btn.classList.add("disabled");
+            take_photo_btn.classList.remove("disabled");
+        });
+
+        //スナップショットを撮る関数
+        function takeSnapshot(video) {
+            try {
+                // --- 1. 3Dモデルを透明な背景で取得 ---
+                const modelCanvas = sceneEl.components.screenshot.getCanvas('perspective');
+
+                // --- 2. 背景用の新しいcanvasを作成 ---
+                const finalCanvas = document.createElement('canvas');
+                const context = finalCanvas.getContext('2d');
+
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
+
+                // スマホの縦向きを判定
+                const isPortrait = videoWidth > videoHeight;
+
+                if (isPortrait) {
+                    // 縦向きの場合、最終的なcanvasのサイズを入れ替える
+                    finalCanvas.width = videoHeight;
+                    finalCanvas.height = videoWidth;
+                } else {
+                    // 横向きの場合はそのまま
+                    finalCanvas.width = videoWidth;
+                    finalCanvas.height = videoHeight;
+                }
+
+                // --- 3. 背景のカメラ映像を描画 ---
+                if (isPortrait) {
+                    // 縦向きの場合、映像を90度回転させて描画
+                    context.translate(finalCanvas.width / 2, finalCanvas.height / 2);
+                    context.rotate(Math.PI / 2);
+                    context.drawImage(video, -videoWidth / 2, -videoHeight / 2, videoWidth, videoHeight);
+                    // 回転を元に戻す
+                    context.rotate(-Math.PI / 2);
+                    context.translate(-finalCanvas.width / 2, -finalCanvas.height / 2);
+                } else {
+                    // 横向きの場合はそのまま描画
+                    context.drawImage(video, 0, 0, videoWidth, videoHeight);
+                }
+
+                // --- 4. 背景の上に3Dモデルを重ねて描画 ---
+                context.drawImage(modelCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
+                
+                // 取得した映像を画像データとして返す
+                return finalCanvas.toDataURL('image/png');
+
+            } catch (error) {
+                console.error("撮影エラー:", error);
+                alert("撮影中にエラーが発生しました。");
+                return null;
+            }
         }
-      });
     </script>
-  </body>
+</body>
 </html>
