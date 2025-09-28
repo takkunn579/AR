@@ -1,78 +1,78 @@
+<!DOCTYPE html>
 <html>
-  <head>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.rawgit.com/AR-js-org/AR.js/3.3.2/aframe/build/aframe-ar.js"></script>
-  </head>
-  <body style="margin:0; overflow:hidden;">
+<head>
+  <meta charset="utf-8">
+  <title>Simple AR</title>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+</head>
 
-    <!-- A-Frame + AR.js シーン -->
-    <a-scene
-      vr-mode-ui="enabled: false;"
-      embedded
-      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+<body style="margin: 0; overflow: hidden;">
+  <a-scene
+    vr-mode-ui="enabled: false;"
+    renderer="logarithmicDepthBuffer: true; preserveDrawingBuffer: true;"
+    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+    embedded
+  >
+    <a-assets>
+      <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
+    </a-assets>
+
+    <a-marker type="pattern" url="assets/marker1.patt">
+      <a-entity
+        gltf-model="#model1"
+        scale="0.5 0.5 0.5"
+        rotation="-90 0 0"
+        position="0 0 0"
+      ></a-entity>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <button id="snapshotBtn" style="position: absolute; top: 20px; left: 20px; padding: 10px; font-size: 16px; z-index: 10;">
+    📸 撮影
+  </button>
+
+  <div id="previewContainer" style="position: absolute; top: 70px; left: 20px; display: none; z-index: 10; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px;">
+    <img id="previewImage" style="max-width: 200px; display: block; margin-bottom: 10px;">
+    <button id="downloadBtn" style="margin-right: 10px;">💾 保存</button>
+    <button id="closeBtn">❌ 閉じる</button>
+  </div>
+
+  <script>
+    // 必要なHTML要素を取得
+    const sceneEl = document.querySelector('a-scene');
+    const snapshotBtn = document.getElementById('snapshotBtn');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImage = document.getElementById('previewImage');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const closeBtn = document.getElementById('closeBtn');
+
+    // 「撮影」ボタンがクリックされたときの処理
+    snapshotBtn.addEventListener('click', () => {
+      // sceneEl.renderer.domElement はARの映像が描画されている場所（canvas要素）
+      // .toDataURL() で、canvasの現在の表示を画像データとして取得する
+      const imageData = sceneEl.renderer.domElement.toDataURL('image/png');
       
-      <a-assets>
-        <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
-      </a-assets>
+      // プレビュー用のimg要素に、取得した画像データを設定
+      previewImage.src = imageData;
+      // プレビューエリアを表示する
+      previewContainer.style.display = 'block';
 
-      <!-- マーカーにモデルを表示 -->
-      <a-marker type="pattern" url="assets/marker1.patt">
-        <a-entity
-          gltf-model="#model1"
-          scale="0.5 0.5 0.5"
-          rotation="0 180 0"
-          position="0 0 0">
-        </a-entity>
-      </a-marker>
+      // 「保存」ボタンが押されたらダウンロード処理を実行
+      downloadBtn.onclick = () => {
+        const link = document.createElement('a');
+        link.href = imageData;
+        link.download = 'ar_snapshot.png'; // ダウンロードするファイル名
+        link.click();
+      };
 
-      <a-entity camera></a-entity>
-    </a-scene>
-
-    <!-- 撮影ボタン -->
-    <button id="snapshotBtn" 
-      style="position: absolute; top: 20px; left: 20px; padding:10px; font-size:16px; z-index:10;">
-      📸 撮影
-    </button>
-
-    <!-- プレビューエリア -->
-    <div id="previewContainer" 
-         style="position:absolute; top:70px; left:20px; display:none; z-index:10; background:rgba(0,0,0,0.7); padding:10px; border-radius:5px;">
-      <img id="previewImage" style="max-width:300px; display:block; margin-bottom:10px;">
-      <button id="downloadBtn" style="margin-right:10px;">💾 ダウンロード</button>
-      <button id="deleteBtn">❌ 削除</button>
-    </div>
-
-    <script>
-      const sceneEl = document.querySelector('a-scene');
-      const snapshotBtn = document.getElementById('snapshotBtn');
-      const previewContainer = document.getElementById('previewContainer');
-      const previewImage = document.getElementById('previewImage');
-      const downloadBtn = document.getElementById('downloadBtn');
-      const deleteBtn = document.getElementById('deleteBtn');
-
-      snapshotBtn.addEventListener('click', () => {
-        try {
-          const canvas = sceneEl.renderer.domElement;
-          const dataURL = canvas.toDataURL("image/png");
-
-          previewImage.src = dataURL;
-          previewContainer.style.display = "block";
-
-          downloadBtn.onclick = () => {
-            const link = document.createElement('a');
-            link.href = dataURL;
-            link.download = "snapshot.png";
-            link.click();
-          };
-
-          deleteBtn.onclick = () => {
-            previewContainer.style.display = "none";
-            previewImage.src = "";
-          };
-        } catch (err) {
-          console.error("撮影エラー:", err);
-        }
-      });
-    </script>
-  </body>
+      // 「閉じる」ボタンが押されたらプレビューを非表示にする
+      closeBtn.onclick = () => {
+        previewContainer.style.display = 'none';
+      };
+    });
+  </script>
+</body>
 </html>
