@@ -148,33 +148,33 @@
         });
 
         //スナップショットを撮る関数
-        function takeSnapshot(video) {
+function takeSnapshot(video) {
     try {
+        // 1. 3Dモデルを取得
         const modelCanvas = sceneEl.components.screenshot.getCanvas('perspective');
 
+        // 2. 背景用canvas作成（videoと同じサイズ）
         const finalCanvas = document.createElement('canvas');
         const context = finalCanvas.getContext('2d');
-
-        // canvasサイズはvideoと同じにする
         finalCanvas.width = video.videoWidth;
         finalCanvas.height = video.videoHeight;
 
-        // 背景カメラ映像をそのまま描画（回転なし）
+        // 3. 背景カメラ映像をそのまま描画
         context.drawImage(video, 0, 0, finalCanvas.width, finalCanvas.height);
 
-        // 3Dモデルを少し横に伸ばして重ねる
+        // 4. 3Dモデルを少し横に伸ばして重ねる
         const scaleX = 1.1; // 横10%拡大
         const scaleY = 1.0; // 縦はそのまま
-
         const modelWidth = finalCanvas.width * scaleX;
         const modelHeight = finalCanvas.height * scaleY;
 
-        // 中央配置
+        // 中央揃え
         const offsetX = (finalCanvas.width - modelWidth) / 2;
         const offsetY = (finalCanvas.height - modelHeight) / 2;
 
         context.drawImage(modelCanvas, offsetX, offsetY, modelWidth, modelHeight);
 
+        // 5. PNGとして返す
         return finalCanvas.toDataURL('image/png');
 
     } catch (error) {
@@ -183,6 +183,7 @@
         return null;
     }
 }
+
 
 
     </script>
