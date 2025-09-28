@@ -1,204 +1,78 @@
-<!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8">
-    <title>AR Photo Booth</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <link href="//fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <head>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/AR-js-org/AR.js/3.3.2/aframe/build/aframe-ar.js"></script>
+  </head>
+  <body style="margin:0; overflow:hidden;">
 
-    <style>
-        /* CSSに変更はありません */
-        .ui {
-            position: absolute;
-            z-index: 100;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: auto;
-            margin: 0;
-            padding: 10px 15px 30px;
-            text-align: center;
-            box-sizing: border-box;
-        }
-        .ui a {
-            display: inline-block;
-            width: 60px;
-            height: 60px;
-            background-color: #ffffff;
-            line-height: 100%;
-            color: #303030;
-            margin: 10px 3px;
-            border-radius: 50%;
-            position: relative;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .ui a i {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%,-50%);
-            font-size: 28px;
-        }
-        .ui a:active {
-            color: #ff0000;
-        }
-        #snap {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: contain; /* 画像の縦横比を維持 */
-            background-color: rgba(0,0,0,0.85);
-            z-index: 99; /* UI(z-index: 100)より背面に配置 */
-            visibility: hidden;
-        }
-        .ui a.disabled {
-            pointer-events: none;
-            color: #cccccc;
-            background-color: #f0f0f0;
-        }
-        #snap.visible {
-            visibility: visible;
-        }
-    </style>
-</head>
-
-<body style="margin: 0; overflow: hidden;">
-
+    <!-- A-Frame + AR.js シーン -->
     <a-scene
-        vr-mode-ui="enabled: false;"
-        loading-screen="enabled: false;"
-        renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true; preserveDrawingBuffer: true; alpha: true;"
-        arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-        embedded
-        screenshot
-    >
-        <a-assets>
-            <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
-            <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
-            <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
-        </a-assets>
+      vr-mode-ui="enabled: false;"
+      embedded
+      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+      
+      <a-assets>
+        <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
+      </a-assets>
 
-        <a-marker type="pattern" url="assets/marker1.patt">
-            <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
-            </a-entity>
-        </a-marker>
+      <!-- マーカーにモデルを表示 -->
+      <a-marker type="pattern" url="assets/marker1.patt">
+        <a-entity
+          gltf-model="#model1"
+          scale="0.5 0.5 0.5"
+          rotation="0 180 0"
+          position="0 0 0">
+        </a-entity>
+      </a-marker>
 
-        <a-marker type="pattern" url="assets/marker2.patt">
-            <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
-            </a-entity>
-        </a-marker>
+      <a-entity camera></a-entity>
+    </a-scene>
 
-        <a-marker type="pattern" url="assets/marker3.patt">
-            <a-entity rotation="-90 0 0">
-                <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
-            </a-entity>
-        </a-marker>
+    <!-- 撮影ボタン -->
+    <button id="snapshotBtn" 
+      style="position: absolute; top: 20px; left: 20px; padding:10px; font-size:16px; z-index:10;">
+      📸 撮影
+    </button>
 
-        <a-entity camera></a-entity>
-        
-    </a-scene> <img id="snap">
-    <div class="ui">
-        <a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
-        <a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
+    <!-- プレビューエリア -->
+    <div id="previewContainer" 
+         style="position:absolute; top:70px; left:20px; display:none; z-index:10; background:rgba(0,0,0,0.7); padding:10px; border-radius:5px;">
+      <img id="previewImage" style="max-width:300px; display:block; margin-bottom:10px;">
+      <button id="downloadBtn" style="margin-right:10px;">💾 ダウンロード</button>
+      <button id="deleteBtn">❌ 削除</button>
     </div>
 
     <script>
-        // JavaScriptに変更はありません
-        const image = document.querySelector('#snap');
-        const take_photo_btn = document.querySelector('#take-photo');
-        const delete_photo_btn = document.querySelector('#delete-photo');
-        const sceneEl = document.querySelector("a-scene");
+      const sceneEl = document.querySelector('a-scene');
+      const snapshotBtn = document.getElementById('snapshotBtn');
+      const previewContainer = document.getElementById('previewContainer');
+      const previewImage = document.getElementById('previewImage');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const deleteBtn = document.getElementById('deleteBtn');
 
-        //スナップショットボタン
-        take_photo_btn.addEventListener("click", function (e) {
-            e.preventDefault();
-            
-            const video = document.querySelector('video');
-            if (!video) return;
+      snapshotBtn.addEventListener('click', () => {
+        try {
+          const canvas = sceneEl.renderer.domElement;
+          const dataURL = canvas.toDataURL("image/png");
 
-            const snap = takeSnapshot(video);
-            if (!snap) return;
+          previewImage.src = dataURL;
+          previewContainer.style.display = "block";
 
-            //スナップショット表示
-            image.setAttribute('src', snap);
-            image.classList.add('visible');
+          downloadBtn.onclick = () => {
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = "snapshot.png";
+            link.click();
+          };
 
-            // 削除ボタンを有効化し、撮影ボタンを無効化
-            delete_photo_btn.classList.remove("disabled");
-            take_photo_btn.classList.add("disabled");
-        });
-
-        //削除ボタン
-        delete_photo_btn.addEventListener("click", function(e){
-            e.preventDefault();
-
-            // スナップショットを隠す
-            image.setAttribute('src', "");
-            image.classList.remove("visible");
-
-            // 削除ボタンを無効化し、撮影ボタンを有効化
-            delete_photo_btn.classList.add("disabled");
-            take_photo_btn.classList.remove("disabled");
-        });
-
-        //スナップショットを撮る関数
-        function takeSnapshot(video) {
-            try {
-                // --- 1. 3Dモデルを透明な背景で取得 ---
-                const modelCanvas = sceneEl.components.screenshot.getCanvas('perspective');
-
-                // --- 2. 背景用の新しいcanvasを作成 ---
-                const finalCanvas = document.createElement('canvas');
-                const context = finalCanvas.getContext('2d');
-
-                const videoWidth = video.videoWidth;
-                const videoHeight = video.videoHeight;
-
-                // スマホの縦向きを判定
-                const isPortrait = videoWidth > videoHeight;
-
-                if (isPortrait) {
-                    // 縦向きの場合、最終的なcanvasのサイズを入れ替える
-                    finalCanvas.width = videoHeight;
-                    finalCanvas.height = videoWidth;
-                } else {
-                    // 横向きの場合はそのまま
-                    finalCanvas.width = videoWidth;
-                    finalCanvas.height = videoHeight;
-                }
-
-                // --- 3. 背景のカメラ映像を描画 ---
-                if (isPortrait) {
-                    // 縦向きの場合、映像を90度回転させて描画
-                    context.translate(finalCanvas.width / 2, finalCanvas.height / 2);
-                    context.rotate(Math.PI / 2);
-                    context.drawImage(video, -videoWidth / 2, -videoHeight / 2, videoWidth, videoHeight);
-                    // 回転を元に戻す
-                    context.rotate(-Math.PI / 2);
-                    context.translate(-finalCanvas.width / 2, -finalCanvas.height / 2);
-                } else {
-                    // 横向きの場合はそのまま描画
-                    context.drawImage(video, 0, 0, videoWidth, videoHeight);
-                }
-
-                // --- 4. 背景の上に3Dモデルを重ねて描画 ---
-                context.drawImage(modelCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
-                
-                // 取得した映像を画像データとして返す
-                return finalCanvas.toDataURL('image/png');
-
-            } catch (error) {
-                console.error("撮影エラー:", error);
-                alert("撮影中にエラーが発生しました。");
-                return null;
-            }
+          deleteBtn.onclick = () => {
+            previewContainer.style.display = "none";
+            previewImage.src = "";
+          };
+        } catch (err) {
+          console.error("撮影エラー:", err);
         }
+      });
     </script>
-</body>
+  </body>
 </html>
