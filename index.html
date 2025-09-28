@@ -10,8 +10,6 @@
 
     <style>
         /* CSSに変更はありません */
-
-
         .ui {
             position: absolute;
             z-index: 100;
@@ -150,25 +148,57 @@
         });
 
         //スナップショットを撮る関数
-        //スナップショットを撮る関数
-function takeSnapshot() {
-    try {
-        // A-Frame の描画キャンバスを取得
-        const canvas = sceneEl.renderer.domElement;
-        if (!canvas) return null;
+        function takeSnapshot(video) {
+            try {
+                // --- 1. 3Dモデルを透明な背景で取得 ---
+                const modelCanvas = sceneEl.components.screenshot.getCanvas('perspective');
 
-        // そのまま使うのでリサイズなし
-        return canvas.toDataURL("image/png");
-    } catch (error) {
-        console.error("撮影エラー:", error);
-        alert("撮影中にエラーが発生しました。");
-        return null;
-    }
-}
+                // --- 2. 背景用の新しいcanvasを作成 ---
+                const finalCanvas = document.createElement('canvas');
+                const context = finalCanvas.getContext('2d');
 
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
 
+                // スマホの縦向きを判定
+                const isPortrait = videoWidth > videoHeight;
 
+                if (isPortrait) {
+                    // 縦向きの場合、最終的なcanvasのサイズを入れ替える
+                    finalCanvas.width = videoHeight;
+                    finalCanvas.height = videoWidth;
+                } else {
+                    // 横向きの場合はそのまま
+                    finalCanvas.width = videoWidth;
+                    finalCanvas.height = videoHeight;
+                }
 
+                // --- 3. 背景のカメラ映像を描画 ---
+                if (isPortrait) {
+                    // 縦向きの場合、映像を90度回転させて描画
+                    context.translate(finalCanvas.width / 2, finalCanvas.height / 2);
+                    context.rotate(Math.PI / 2);
+                    context.drawImage(video, -videoWidth / 2, -videoHeight / 2, videoWidth, videoHeight);
+                    // 回転を元に戻す
+                    context.rotate(-Math.PI / 2);
+                    context.translate(-finalCanvas.width / 2, -finalCanvas.height / 2);
+                } else {
+                    // 横向きの場合はそのまま描画
+                    context.drawImage(video, 0, 0, videoWidth, videoHeight);
+                }
+
+                // --- 4. 背景の上に3Dモデルを重ねて描画 ---
+                context.drawImage(modelCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
+                
+                // 取得した映像を画像データとして返す
+                return finalCanvas.toDataURL('image/png');
+
+            } catch (error) {
+                console.error("撮影エラー:", error);
+                alert("撮影中にエラーが発生しました。");
+                return null;
+            }
+        }
     </script>
 </body>
 </html>
