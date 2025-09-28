@@ -68,14 +68,16 @@
 <body style="margin: 0; overflow: hidden;">
 
     <a-scene
-        vr-mode-ui="enabled: false;"
-        loading-screen="enabled: false;"
-        renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true; preserveDrawingBuffer: true;"
-        arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-        embedded
-        screenshot
-    >
-        <a-assets>
+    vr-mode-ui="enabled: false;"
+    loading-screen="enabled: false;"
+    
+    renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true; preserveDrawingBuffer: true; alpha: true;"
+    
+    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+    embedded
+    screenshot
+>
+    </a-scene>
             <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
             <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
             <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
@@ -149,43 +151,52 @@
         //スナップショットを撮る関数
         //スナップショットを撮る関数
 //スナップショットを撮る関数
+//スナップショットを撮る関数
 function takeSnapshot(video) {
     try {
-        // 1. A-Frameから完成品の映像を「横向きのまま」取得します
-        const sourceCanvas = sceneEl.components.screenshot.getCanvas('perspective');
+        // --- 1. 3Dモデルを透明な背景で取得 ---
+        // rendererのalpha:true設定により、背景が透明なモデルのみの画像が撮れる
+        const modelCanvas = sceneEl.components.screenshot.getCanvas('perspective');
 
-        // 2. 画面が縦向きかどうかを判定します
-        // windowの幅より高さが大きい場合、スマホは縦向きです
-        const isPortrait = window.innerHeight > window.innerWidth;
-
-        // 3. 正しい向きのcanvasを新規作成します
+        // --- 2. 背景用の新しいcanvasを作成 ---
         const finalCanvas = document.createElement('canvas');
         const context = finalCanvas.getContext('2d');
 
+        const videoWidth = video.videoWidth;
+        const videoHeight = video.videoHeight;
+
+        // スマホの縦向きを判定
+        const isPortrait = videoWidth > videoHeight;
+
         if (isPortrait) {
-            // 縦向きの場合、幅と高さを入れ替えます
-            finalCanvas.width = sourceCanvas.height;
-            finalCanvas.height = sourceCanvas.width;
+            // 縦向きの場合、最終的なcanvasのサイズを入れ替える
+            finalCanvas.width = videoHeight;
+            finalCanvas.height = videoWidth;
         } else {
             // 横向きの場合はそのまま
-            finalCanvas.width = sourceCanvas.width;
-            finalCanvas.height = sourceCanvas.height;
+            finalCanvas.width = videoWidth;
+            finalCanvas.height = videoHeight;
         }
 
-        // 4. 新しいcanvasに、元の画像を回転させながら描画します
+        // --- 3. 背景のカメラ映像を描画 ---
         if (isPortrait) {
-            // canvasの中心を基準に回転させます
+            // 縦向きの場合、映像を90度回転させて描画
             context.translate(finalCanvas.width / 2, finalCanvas.height / 2);
-            // 90度回転させます（時計回り）
             context.rotate(Math.PI / 2);
-            // 中心のずれた画像を元に戻すように描画します
-            context.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2);
+            context.drawImage(video, -videoWidth / 2, -videoHeight / 2, videoWidth, videoHeight);
+            // 回転を元に戻す
+            context.rotate(-Math.PI / 2);
+            context.translate(-finalCanvas.width / 2, -finalCanvas.height / 2);
         } else {
-            // 横向きの場合は回転不要
-            context.drawImage(sourceCanvas, 0, 0);
+            // 横向きの場合はそのまま描画
+            context.drawImage(video, 0, 0, videoWidth, videoHeight);
         }
 
-        // 5. 正しい向きになったcanvasを画像データとして返します
+        // --- 4. 背景の上に3Dモデルを重ねて描画 ---
+        // modelCanvasは表示されている画面と同じ向きなので、回転は不要
+        context.drawImage(modelCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
+        
+        // 取得した映像を画像データとして返す
         return finalCanvas.toDataURL('image/png');
 
     } catch (error) {
