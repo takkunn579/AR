@@ -9,6 +9,7 @@
     <link href="//fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <style>
+        /* CSSに変更はありません */
         .ui {
             position: absolute;
             z-index: 100;
@@ -68,15 +69,14 @@
 <body style="margin: 0; overflow: hidden;">
 
     <a-scene
-    vr-mode-ui="enabled: false;"
-    loading-screen="enabled: false;"
-    
-    renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true; preserveDrawingBuffer: true; alpha: true;"
-    
-    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-    embedded
-    screenshot>
-    </a-scene>
+        vr-mode-ui="enabled: false;"
+        loading-screen="enabled: false;"
+        renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true; preserveDrawingBuffer: true; alpha: true;"
+        arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+        embedded
+        screenshot
+    >
+        <a-assets>
             <a-asset-item id="model1" src="assets/model1.glb"></a-asset-item>
             <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
             <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
@@ -101,15 +101,15 @@
         </a-marker>
 
         <a-entity camera></a-entity>
-    </a-scene>
-
-    <img id="snap">
+        
+    </a-scene> <img id="snap">
     <div class="ui">
         <a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
         <a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
     </div>
 
     <script>
+        // JavaScriptに変更はありません
         const image = document.querySelector('#snap');
         const take_photo_btn = document.querySelector('#take-photo');
         const delete_photo_btn = document.querySelector('#delete-photo');
@@ -148,62 +148,57 @@
         });
 
         //スナップショットを撮る関数
-        //スナップショットを撮る関数
-//スナップショットを撮る関数
-//スナップショットを撮る関数
-function takeSnapshot(video) {
-    try {
-        // --- 1. 3Dモデルを透明な背景で取得 ---
-        // rendererのalpha:true設定により、背景が透明なモデルのみの画像が撮れる
-        const modelCanvas = sceneEl.components.screenshot.getCanvas('perspective');
+        function takeSnapshot(video) {
+            try {
+                // --- 1. 3Dモデルを透明な背景で取得 ---
+                const modelCanvas = sceneEl.components.screenshot.getCanvas('perspective');
 
-        // --- 2. 背景用の新しいcanvasを作成 ---
-        const finalCanvas = document.createElement('canvas');
-        const context = finalCanvas.getContext('2d');
+                // --- 2. 背景用の新しいcanvasを作成 ---
+                const finalCanvas = document.createElement('canvas');
+                const context = finalCanvas.getContext('2d');
 
-        const videoWidth = video.videoWidth;
-        const videoHeight = video.videoHeight;
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
 
-        // スマホの縦向きを判定
-        const isPortrait = videoWidth > videoHeight;
+                // スマホの縦向きを判定
+                const isPortrait = videoWidth > videoHeight;
 
-        if (isPortrait) {
-            // 縦向きの場合、最終的なcanvasのサイズを入れ替える
-            finalCanvas.width = videoHeight;
-            finalCanvas.height = videoWidth;
-        } else {
-            // 横向きの場合はそのまま
-            finalCanvas.width = videoWidth;
-            finalCanvas.height = videoHeight;
+                if (isPortrait) {
+                    // 縦向きの場合、最終的なcanvasのサイズを入れ替える
+                    finalCanvas.width = videoHeight;
+                    finalCanvas.height = videoWidth;
+                } else {
+                    // 横向きの場合はそのまま
+                    finalCanvas.width = videoWidth;
+                    finalCanvas.height = videoHeight;
+                }
+
+                // --- 3. 背景のカメラ映像を描画 ---
+                if (isPortrait) {
+                    // 縦向きの場合、映像を90度回転させて描画
+                    context.translate(finalCanvas.width / 2, finalCanvas.height / 2);
+                    context.rotate(Math.PI / 2);
+                    context.drawImage(video, -videoWidth / 2, -videoHeight / 2, videoWidth, videoHeight);
+                    // 回転を元に戻す
+                    context.rotate(-Math.PI / 2);
+                    context.translate(-finalCanvas.width / 2, -finalCanvas.height / 2);
+                } else {
+                    // 横向きの場合はそのまま描画
+                    context.drawImage(video, 0, 0, videoWidth, videoHeight);
+                }
+
+                // --- 4. 背景の上に3Dモデルを重ねて描画 ---
+                context.drawImage(modelCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
+                
+                // 取得した映像を画像データとして返す
+                return finalCanvas.toDataURL('image/png');
+
+            } catch (error) {
+                console.error("撮影エラー:", error);
+                alert("撮影中にエラーが発生しました。");
+                return null;
+            }
         }
-
-        // --- 3. 背景のカメラ映像を描画 ---
-        if (isPortrait) {
-            // 縦向きの場合、映像を90度回転させて描画
-            context.translate(finalCanvas.width / 2, finalCanvas.height / 2);
-            context.rotate(Math.PI / 2);
-            context.drawImage(video, -videoWidth / 2, -videoHeight / 2, videoWidth, videoHeight);
-            // 回転を元に戻す
-            context.rotate(-Math.PI / 2);
-            context.translate(-finalCanvas.width / 2, -finalCanvas.height / 2);
-        } else {
-            // 横向きの場合はそのまま描画
-            context.drawImage(video, 0, 0, videoWidth, videoHeight);
-        }
-
-        // --- 4. 背景の上に3Dモデルを重ねて描画 ---
-        // modelCanvasは表示されている画面と同じ向きなので、回転は不要
-        context.drawImage(modelCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
-        
-        // 取得した映像を画像データとして返す
-        return finalCanvas.toDataURL('image/png');
-
-    } catch (error) {
-        console.error("撮影エラー:", error);
-        alert("撮影中にエラーが発生しました。");
-        return null;
-    }
-}
     </script>
 </body>
 </html>
