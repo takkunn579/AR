@@ -1,4 +1,4 @@
-xx<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
@@ -9,7 +9,20 @@ xx<!DOCTYPE html>
     <link href="//fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <style>
-        /* CSSに変更はありません */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        a-scene, a-scene canvas {
+            width: 100vw !important;
+            height: 100vh !important;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
         .ui {
             position: absolute;
             z-index: 100;
@@ -50,9 +63,9 @@ xx<!DOCTYPE html>
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain; /* 画像の縦横比を維持 */
+            object-fit: contain;
             background-color: rgba(0,0,0,0.85);
-            z-index: 99; /* UI(z-index: 100)より背面に配置 */
+            z-index: 99;
             visibility: hidden;
         }
         .ui a.disabled {
@@ -101,147 +114,94 @@ xx<!DOCTYPE html>
         </a-marker>
 
         <a-entity camera></a-entity>
-        
-    </a-scene> <img id="snap">
+    </a-scene> 
+
+    <img id="snap">
+
     <div class="ui">
         <a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
         <a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
     </div>
 
     <script>
-        // JavaScriptに変更はありません
         const image = document.querySelector('#snap');
         const take_photo_btn = document.querySelector('#take-photo');
         const delete_photo_btn = document.querySelector('#delete-photo');
         const sceneEl = document.querySelector("a-scene");
 
-        //スナップショットボタン
+        // 撮影ボタン
         take_photo_btn.addEventListener("click", function (e) {
             e.preventDefault();
-            
-            const video = document.querySelector('video');
-            if (!video) return;
-
-            const snap = takeSnapshot(video);
+            const snap = takeSnapshot();
             if (!snap) return;
 
-            //スナップショット表示
             image.setAttribute('src', snap);
             image.classList.add('visible');
 
-            // 削除ボタンを有効化し、撮影ボタンを無効化
             delete_photo_btn.classList.remove("disabled");
             take_photo_btn.classList.add("disabled");
         });
 
-        //削除ボタン
+        // 削除ボタン
         delete_photo_btn.addEventListener("click", function(e){
             e.preventDefault();
-
-            // スナップショットを隠す
             image.setAttribute('src', "");
             image.classList.remove("visible");
 
-            // 削除ボタンを無効化し、撮影ボタンを有効化
             delete_photo_btn.classList.add("disabled");
             take_photo_btn.classList.remove("disabled");
         });
 
-        //スナップショットを撮る関数
+        // スナップショット関数（背景+モデル, 縦横比補正）
         function takeSnapshot() {
-    try {
-        // 1) モデルをレンダリングしているキャンバスを取得（transparentならalphaあり）
-        const modelCanvas = (sceneEl.components && sceneEl.components.screenshot)
-            ? sceneEl.components.screenshot.getCanvas('perspective')
-            : sceneEl.renderer.domElement;
-        if (!modelCanvas) return null;
+            try {
+                // モデル描画キャンバスを取得
+                const modelCanvas = (sceneEl.components && sceneEl.components.screenshot)
+                    ? sceneEl.components.screenshot.getCanvas('perspective')
+                    : sceneEl.renderer.domElement;
+                if (!modelCanvas) return null;
 
-        // 2) video 要素（カメラ映像）
-        const video = document.querySelector('video');
+                const video = document.querySelector('video');
 
-        // 3) 最終出力キャンバス（video の実際の解像度を使う）
-        const outW = (video && video.videoWidth) ? video.videoWidth : window.innerWidth;
-        const outH = (video && video.videoHeight) ? video.videoHeight : window.innerHeight;
-        const finalCanvas = document.createElement('canvas');
-        finalCanvas.width = outW;
-        finalCanvas.height = outH;
-        const ctx = finalCanvas.getContext('2d');
+                // 出力解像度（video の実サイズを優先）
+                const outW = (video && video.videoWidth) ? video.videoWidth : window.innerWidth;
+                const outH = (video && video.videoHeight) ? video.videoHeight : window.innerHeight;
 
-        // 4) modelCanvas がアルファ（透明）かどうかを判定
-        //    WebGL のコンテキスト属性から alpha を取得（存在しない場合は false とみなす）
-        let hasAlpha = false;
-        try {
-            const gl = sceneEl.renderer.getContext();
-            const attrs = gl && gl.getContextAttributes ? gl.getContextAttributes() : null;
-            hasAlpha = !!(attrs && attrs.alpha);
-        } catch (e) {
-            hasAlpha = false;
-        }
+                const finalCanvas = document.createElement('canvas');
+                finalCanvas.width = outW;
+                finalCanvas.height = outH;
+                const ctx = finalCanvas.getContext('2d');
 
-        // 5) 背景（video）を描画する必要があるときは先に描画
-        if (video && hasAlpha) {
-            // スマホで縦向きに見るときに video の回転が必要な端末もあるので簡易対応
-            const needsRotate = (window.innerHeight > window.innerWidth) && (video.videoWidth > video.videoHeight);
-            if (!needsRotate) {
-                ctx.drawImage(video, 0, 0, outW, outH);
-            } else {
-                // 90° 回転して描画（時計回り）
-                ctx.save();
-                ctx.translate(outW / 2, outH / 2);
-                ctx.rotate(Math.PI / 2);
-                // drawImage の幅/高さを入れ替えて描画
-                ctx.drawImage(video, -outH / 2, -outW / 2, outH, outW);
-                ctx.restore();
+                // 背景（video）描画
+                if (video) {
+                    ctx.drawImage(video, 0, 0, outW, outH);
+                }
+
+                // モデルをアスペクト比維持して重ねる
+                const srcW = modelCanvas.width;
+                const srcH = modelCanvas.height;
+                const srcRatio = srcW / srcH;
+                const dstRatio = outW / outH;
+                let dstW, dstH;
+                if (srcRatio > dstRatio) {
+                    dstW = outW;
+                    dstH = Math.round(outW / srcRatio);
+                } else {
+                    dstH = outH;
+                    dstW = Math.round(outH * srcRatio);
+                }
+                const dx = Math.round((outW - dstW) / 2);
+                const dy = Math.round((outH - dstH) / 2);
+
+                ctx.drawImage(modelCanvas, 0, 0, srcW, srcH, dx, dy, dstW, dstH);
+
+                return finalCanvas.toDataURL("image/png");
+            } catch (error) {
+                console.error("撮影エラー:", error);
+                alert("撮影中にエラーが発生しました。");
+                return null;
             }
         }
-
-        // 6) modelCanvas（3D）をアスペクト比を維持して中央に重ねる（＝aspect-fit）
-        const srcW = modelCanvas.width;
-        const srcH = modelCanvas.height;
-        // 非数防止
-        if (!srcW || !srcH) {
-            // fallback: そのまま modelCanvas を出力キャンバスに引き伸ばす
-            ctx.drawImage(modelCanvas, 0, 0, outW, outH);
-            return finalCanvas.toDataURL('image/png');
-        }
-
-        const srcRatio = srcW / srcH;
-        const dstRatio = outW / outH;
-        let dstW, dstH;
-        if (srcRatio > dstRatio) {
-            // source が横長 → 横幅をいっぱいにして高さを算出
-            dstW = outW;
-            dstH = Math.round(outW / srcRatio);
-        } else {
-            // source が縦長 or 同比率 → 高さをいっぱいにして幅を算出
-            dstH = outH;
-            dstW = Math.round(outH * srcRatio);
-        }
-        const dx = Math.round((outW - dstW) / 2);
-        const dy = Math.round((outH - dstH) / 2);
-
-        // もし modelCanvas 自体に既に背景（video）が含まれているなら
-        // 上で video を描画してしまうと二重になる。簡単に判定するには modelCanvas に透明ピクセルがあるか調べる方法があるがコスト高。
-        // ここでは「modelCanvas が alpha を持っているなら video を下に描いて上書き、持っていなければ modelCanvas が背景込み」として扱う。
-        if (!hasAlpha) {
-            // modelCanvas に背景が含まれている想定 → そのまま modelCanvas を元サイズで出力に合わせて伸縮（画面通りの見た目を保存）
-            ctx.drawImage(modelCanvas, 0, 0, srcW, srcH, 0, 0, outW, outH);
-        } else {
-            // modelCanvas が透明なので、下に描いた video の上に modelCanvas を aspect-fit で重ねる
-            ctx.drawImage(modelCanvas, 0, 0, srcW, srcH, dx, dy, dstW, dstH);
-        }
-
-        return finalCanvas.toDataURL('image/png');
-
-    } catch (error) {
-        console.error("撮影エラー:", error);
-        alert("撮影中にエラーが発生しました。");
-        return null;
-    }
-}
-
-
-
     </script>
 </body>
 </html>
