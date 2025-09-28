@@ -150,52 +150,31 @@
         //スナップショットを撮る関数
         function takeSnapshot(video) {
     try {
-        // --- 1. 3Dモデルのcanvasを取得 ---
         const modelCanvas = sceneEl.components.screenshot.getCanvas('perspective');
 
-        // --- 2. 背景用のcanvasを作成 ---
         const finalCanvas = document.createElement('canvas');
         const context = finalCanvas.getContext('2d');
 
-        const videoWidth = video.videoWidth;
-        const videoHeight = video.videoHeight;
+        // canvasサイズはvideoと同じにする
+        finalCanvas.width = video.videoWidth;
+        finalCanvas.height = video.videoHeight;
 
-        // 縦向き判定
-        const isPortrait = videoHeight > videoWidth;
+        // 背景カメラ映像をそのまま描画（回転なし）
+        context.drawImage(video, 0, 0, finalCanvas.width, finalCanvas.height);
 
-        // finalCanvas のサイズ設定
-        if (isPortrait) {
-            finalCanvas.width = videoHeight;
-            finalCanvas.height = videoWidth;
-        } else {
-            finalCanvas.width = videoWidth;
-            finalCanvas.height = videoHeight;
-        }
-
-        // --- 3. 背景カメラ映像を描画 ---
-        if (isPortrait) {
-            context.translate(finalCanvas.width / 2, finalCanvas.height / 2);
-            context.rotate(Math.PI / 2);
-            context.drawImage(video, -videoWidth / 2, -videoHeight / 2, videoWidth, videoHeight);
-            context.rotate(-Math.PI / 2);
-            context.translate(-finalCanvas.width / 2, -finalCanvas.height / 2);
-        } else {
-            context.drawImage(video, 0, 0, finalCanvas.width, finalCanvas.height);
-        }
-
-        // --- 4. 3Dモデルを少し横に伸ばして重ねる ---
-        const scaleX = 1.5; // 横に10%拡大
+        // 3Dモデルを少し横に伸ばして重ねる
+        const scaleX = 1.1; // 横10%拡大
         const scaleY = 1.0; // 縦はそのまま
 
         const modelWidth = finalCanvas.width * scaleX;
         const modelHeight = finalCanvas.height * scaleY;
 
+        // 中央配置
         const offsetX = (finalCanvas.width - modelWidth) / 2;
         const offsetY = (finalCanvas.height - modelHeight) / 2;
 
         context.drawImage(modelCanvas, offsetX, offsetY, modelWidth, modelHeight);
 
-        // --- 5. PNGデータとして返す ---
         return finalCanvas.toDataURL('image/png');
 
     } catch (error) {
@@ -204,6 +183,7 @@
         return null;
     }
 }
+
 
     </script>
 </body>
