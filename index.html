@@ -148,13 +148,45 @@
 
         //スナップショットを撮る関数
         //スナップショットを撮る関数
+//スナップショットを撮る関数
 function takeSnapshot(video) {
     try {
-        // A-Frameのシーンから、表示されているままの映像を取得する
-        const screenshotCanvas = sceneEl.components.screenshot.getCanvas('perspective');
-        
-        // 取得した映像を画像データとして返す
-        return screenshotCanvas.toDataURL('image/png');
+        // 1. A-Frameから完成品の映像を「横向きのまま」取得します
+        const sourceCanvas = sceneEl.components.screenshot.getCanvas('perspective');
+
+        // 2. 画面が縦向きかどうかを判定します
+        // windowの幅より高さが大きい場合、スマホは縦向きです
+        const isPortrait = window.innerHeight > window.innerWidth;
+
+        // 3. 正しい向きのcanvasを新規作成します
+        const finalCanvas = document.createElement('canvas');
+        const context = finalCanvas.getContext('2d');
+
+        if (isPortrait) {
+            // 縦向きの場合、幅と高さを入れ替えます
+            finalCanvas.width = sourceCanvas.height;
+            finalCanvas.height = sourceCanvas.width;
+        } else {
+            // 横向きの場合はそのまま
+            finalCanvas.width = sourceCanvas.width;
+            finalCanvas.height = sourceCanvas.height;
+        }
+
+        // 4. 新しいcanvasに、元の画像を回転させながら描画します
+        if (isPortrait) {
+            // canvasの中心を基準に回転させます
+            context.translate(finalCanvas.width / 2, finalCanvas.height / 2);
+            // 90度回転させます（時計回り）
+            context.rotate(Math.PI / 2);
+            // 中心のずれた画像を元に戻すように描画します
+            context.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2);
+        } else {
+            // 横向きの場合は回転不要
+            context.drawImage(sourceCanvas, 0, 0);
+        }
+
+        // 5. 正しい向きになったcanvasを画像データとして返します
+        return finalCanvas.toDataURL('image/png');
 
     } catch (error) {
         console.error("撮影エラー:", error);
