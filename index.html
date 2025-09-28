@@ -150,46 +150,75 @@
         function takeSnapshot(video) {
     try {
         const aSceneCanvas = sceneEl.components.screenshot.getCanvas("perspective");
-        const videoWidth = video.videoWidth;
-        const videoHeight = video.videoHeight;
 
-        if (videoWidth === 0 || videoHeight === 0) {
+        // ▼【重要】ここから縦画面対応のための修正
+
+        let videoWidth = video.videoWidth;
+        let videoHeight = video.videoHeight;
+
+        // 縦画面かどうかを判定 (映像データの高さより幅が大きい場合は縦画面とみなす)
+        const isPortrait = videoWidth > videoHeight;
+
+        let canvasWidth, canvasHeight;
+
+        // 縦画面の場合、最終的な写真の幅と高さを入れ替える
+        if (isPortrait) {
+            canvasWidth = videoHeight;
+            canvasHeight = videoWidth;
+        } else {
+            canvasWidth = videoWidth;
+            canvasHeight = videoHeight;
+        }
+
+        if (canvasWidth === 0 || canvasHeight === 0) {
             alert("カメラの準備ができていません。少し待ってからもう一度お試しください。");
             return null;
         }
-        
+
+        // 最終的な写真用のcanvasを、判定した向きで作成
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
-        canvas.width = videoWidth;
-        canvas.height = videoHeight;
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
 
-        // 1. 背景としてビデオ映像を描画
-        context.drawImage(video, 0, 0, videoWidth, videoHeight);
+        // 背景となるビデオ映像を描画
+        if (isPortrait) {
+            // 縦画面の場合、canvasの中心を軸に90度回転させてから描画する
+            context.save();
+            context.translate(canvas.width / 2, canvas.height / 2);
+            context.rotate(Math.PI / 2); // 90度回転
+            context.drawImage(video, -video.width / 2, -video.height / 2, video.width, video.height);
+            context.restore();
+        } else {
+            // 横画面の場合はそのまま描画
+            context.drawImage(video, 0, 0, canvasWidth, canvasHeight);
+        }
 
-        // 2. 3Dモデルのシーンを重ねる
+        // ▲ここまでが縦画面対応の修正
+
+        // 3Dモデルのシーンを重ねる（こちらは回転不要）
+        // A-Frameのcanvasは画面の向き通りに描画されているため、そのまま重ねる
         const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
-        const videoAspectRatio = videoWidth / videoHeight;
+        const photoAspectRatio = canvas.width / canvas.height;
 
         let sx, sy, sWidth, sHeight;
 
-        // ビデオのアスペクト比に合わせて3Dシーンをクロップする
-        if (sceneAspectRatio > videoAspectRatio) {
+        if (sceneAspectRatio > photoAspectRatio) {
             sHeight = aSceneCanvas.height;
-            sWidth = sHeight * videoAspectRatio;
+            sWidth = sHeight * photoAspectRatio;
             sx = (aSceneCanvas.width - sWidth) / 2;
             sy = 0;
         } else {
             sWidth = aSceneCanvas.width;
-            sHeight = sWidth / videoAspectRatio;
+            sHeight = sWidth / photoAspectRatio;
             sx = 0;
             sy = (aSceneCanvas.height - sHeight) / 2;
         }
-
-        // 【修正】引き伸ばし処理を削除し、計算した領域をそのまま描画
+        
         context.drawImage(
             aSceneCanvas,
-            sx, sy, sWidth, sHeight,          // ソース領域（計算したままの値）
-            0, 0, videoWidth, videoHeight     // 描画先（ビデオ全体）
+            sx, sy, sWidth, sHeight,
+            0, 0, canvas.width, canvas.height
         );
         
         return canvas.toDataURL('image/png');
