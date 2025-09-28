@@ -10,6 +10,22 @@
 
     <style>
         /* CSSに変更はありません */
+        html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+a-scene, a-scene canvas {
+  width: 100vw !important;
+  height: 100vh !important;
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
         .ui {
             position: absolute;
             z-index: 100;
