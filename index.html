@@ -151,74 +151,117 @@
     try {
         const aSceneCanvas = sceneEl.components.screenshot.getCanvas("perspective");
 
-        // ▼【重要】ここから縦画面対応のための修正
+        let videoNativeWidth = video.videoWidth;
+        let videoNativeHeight = video.videoHeight;
 
-        let videoWidth = video.videoWidth;
-        let videoHeight = video.videoHeight;
+        // 最終的な写真のサイズは、表示されているA-Frameのレンダリングキャンバスのサイズに合わせる
+        // これがユーザーが見ているARの見た目と一致するはず
+        const photoOutputWidth = aSceneCanvas.width;
+        const photoOutputHeight = aSceneCanvas.height;
 
-        // 縦画面かどうかを判定 (映像データの高さより幅が大きい場合は縦画面とみなす)
-        const isPortrait = videoWidth > videoHeight;
-
-        let canvasWidth, canvasHeight;
-
-        // 縦画面の場合、最終的な写真の幅と高さを入れ替える
-        if (isPortrait) {
-            canvasWidth = videoHeight;
-            canvasHeight = videoWidth;
-        } else {
-            canvasWidth = videoWidth;
-            canvasHeight = videoHeight;
-        }
-
-        if (canvasWidth === 0 || canvasHeight === 0) {
+        if (photoOutputWidth === 0 || photoOutputHeight === 0 || videoNativeWidth === 0 || videoNativeHeight === 0) {
             alert("カメラの準備ができていません。少し待ってからもう一度お試しください。");
             return null;
         }
 
-        // 最終的な写真用のcanvasを、判定した向きで作成
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
-        canvas.width = canvasWidth;
-        canvas.height = canvasHeight;
+        canvas.width = photoOutputWidth;
+        canvas.height = photoOutputHeight;
 
-        // 背景となるビデオ映像を描画
-        if (isPortrait) {
-            // 縦画面の場合、canvasの中心を軸に90度回転させてから描画する
-            context.save();
-            context.translate(canvas.width / 2, canvas.height / 2);
-            context.rotate(Math.PI / 2); // 90度回転
-            context.drawImage(video, -video.width / 2, -video.height / 2, video.width, video.height);
-            context.restore();
+        // --- 1. 背景となるビデオ映像を描画 ---
+        // ここでの目標は、video要素の映像を、出力する写真のサイズに合わせて、
+        // 縦横比を保ちつつ、かつ画面いっぱいに（または適切に）表示すること。
+        // object-fit: cover のような振る舞いを実装
+
+        const videoAspectRatio = videoNativeWidth / videoNativeHeight;
+        const photoAspectRatio = photoOutputWidth / photoOutputHeight;
+
+        let videoDrawX = 0;
+        let videoDrawY = 0;
+        let videoDrawWidth = photoOutputWidth;
+        let videoDrawHeight = photoOutputHeight;
+
+        if (videoAspectRatio > photoAspectRatio) {
+            // ビデオが写真より横長なので、高さを合わせ、横はクロップ
+            videoDrawHeight = photoOutputHeight;
+            videoDrawWidth = photoOutputHeight * videoAspectRatio;
+            videoDrawX = (photoOutputWidth - videoDrawWidth) / 2;
         } else {
-            // 横画面の場合はそのまま描画
-            context.drawImage(video, 0, 0, canvasWidth, canvasHeight);
+            // ビデオが写真より縦長なので、幅を合わせ、縦はクロップ
+            videoDrawWidth = photoOutputWidth;
+            videoDrawHeight = photoOutputWidth / videoAspectRatio;
+            videoDrawY = (photoOutputHeight - videoDrawHeight) / 2;
         }
 
-        // ▲ここまでが縦画面対応の修正
+        // 描画前に、ビデオ映像の向きを補正する
+        // A-Frameのスクリーンショットは縦向きで取得されているはずだが、
+        // video要素はネイティブな向き（横向き）でデータを持っているため、
+        // 縦向きの写真に合わせて回転させる必要がある。
+        
+        // context.save();
+        // context.translate(photoOutputWidth / 2, photoOutputHeight / 2);
+        // context.rotate(Math.PI / 2); // 90度回転
+        // context.drawImage(
+        //     video, 
+        //     -videoNativeHeight / 2, // 画面を90度回転させるので、ビデオのheightが新しいX方向
+        //     -videoNativeWidth / 2,  // ビデオのwidthが新しいY方向
+        //     videoNativeHeight,      // 描画するサイズも入れ替わる
+        //     videoNativeWidth
+        // );
+        // context.restore();
 
-        // 3Dモデルのシーンを重ねる（こちらは回転不要）
-        // A-Frameのcanvasは画面の向き通りに描画されているため、そのまま重ねる
-        const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
-        const photoAspectRatio = canvas.width / canvas.height;
-
-        let sx, sy, sWidth, sHeight;
-
-        if (sceneAspectRatio > photoAspectRatio) {
-            sHeight = aSceneCanvas.height;
-            sWidth = sHeight * photoAspectRatio;
-            sx = (aSceneCanvas.width - sWidth) / 2;
-            sy = 0;
+        // AR.jsのカメラ映像は既にCSSで回転されているか、Three.jsによって調整されている可能性が高いので、
+        // video要素をそのままcanvasに描画すると、横向きで描画されてしまう。
+        // ここでvideoWidthとvideoHeightが交換されていれば、その交換された値を使うべき。
+        // しかし、video.videoWidth/Heightは生のデータなので、描画時に調整が必要。
+        // スマホの縦画面で、カメラの生データがwidth > heightの場合、
+        // 描画時に90度回転して、描画先の縦横に合わせる。
+        
+        // ユーザーのデバイスが縦向きかどうか (CSSの `orientation: portrait` などで変わる可能性があるが、ここではビデオのraw dataで判断)
+        const isDevicePortrait = window.matchMedia("(orientation: portrait)").matches;
+        
+        context.save();
+        if (isDevicePortrait && videoNativeWidth > videoNativeHeight) {
+            // デバイスが縦向きで、かつビデオの生データが横長の場合（＝縦画面で撮影中）
+            context.translate(canvas.width / 2, canvas.height / 2);
+            context.rotate(Math.PI / 2); // 90度回転
+            // 回転後の中心座標に合わせるため、描画位置を調整
+            context.drawImage(video, -canvas.height / 2, -canvas.width / 2, canvas.height, canvas.width);
         } else {
-            sWidth = aSceneCanvas.width;
-            sHeight = sWidth / photoAspectRatio;
-            sx = 0;
-            sy = (aSceneCanvas.height - sHeight) / 2;
+            // それ以外（横画面、またはデバイスの向きとビデオの生データが一致）
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
+        context.restore();
+
+
+        // --- 2. 3Dモデルのシーンを重ねる ---
+        // A-Frameのレンダリング結果（aSceneCanvas）は、表示されている画面のサイズとアスペクト比に
+        // 既に合わせられているはずなので、それをそのまま写真canvasに重ねる。
+        // ただし、object-fit: contain のように、歪まずに最大限に収まるように調整する。
+
+        const aSceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
+        let sceneDrawX = 0;
+        let sceneDrawY = 0;
+        let sceneDrawWidth = photoOutputWidth;
+        let sceneDrawHeight = photoOutputHeight;
+
+        if (aSceneAspectRatio > photoAspectRatio) {
+            // シーンが写真より横長なので、幅を合わせ、高さを調整
+            sceneDrawWidth = photoOutputWidth;
+            sceneDrawHeight = photoOutputWidth / aSceneAspectRatio;
+            sceneDrawY = (photoOutputHeight - sceneDrawHeight) / 2;
+        } else {
+            // シーンが写真より縦長なので、高さを合わせ、幅を調整
+            sceneDrawHeight = photoOutputHeight;
+            sceneDrawWidth = photoOutputHeight * aSceneAspectRatio;
+            sceneDrawX = (photoOutputWidth - sceneDrawWidth) / 2;
         }
         
         context.drawImage(
             aSceneCanvas,
-            sx, sy, sWidth, sHeight,
-            0, 0, canvas.width, canvas.height
+            0, 0, aSceneCanvas.width, aSceneCanvas.height, // ソース全体を使う
+            sceneDrawX, sceneDrawY, sceneDrawWidth, sceneDrawHeight // デスティネーションに描画
         );
         
         return canvas.toDataURL('image/png');
