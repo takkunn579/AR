@@ -148,65 +148,58 @@
 
         //スナップショットを撮る関数
         function takeSnapshot(video) {
-            try {
-                const aSceneCanvas = sceneEl.components.screenshot.getCanvas("perspective");
-                const videoWidth = video.videoWidth;
-                const videoHeight = video.videoHeight;
+    try {
+        const aSceneCanvas = sceneEl.components.screenshot.getCanvas("perspective");
+        const videoWidth = video.videoWidth;
+        const videoHeight = video.videoHeight;
 
-                if (videoWidth === 0 || videoHeight === 0) {
-                    alert("カメラの準備ができていません。少し待ってからもう一度お試しください。");
-                    return null;
-                }
-                
-                const canvas = document.createElement("canvas");
-                const context = canvas.getContext("2d");
-                canvas.width = videoWidth;
-                canvas.height = videoHeight;
-
-                // 1. 背景としてビデオ映像を描画
-                context.drawImage(video, 0, 0, videoWidth, videoHeight);
-
-                // 2. 3Dモデルのシーンを重ねる
-                const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
-                const videoAspectRatio = videoWidth / videoHeight;
-
-                let sx, sy, sWidth, sHeight;
-
-                // まず、ビデオのアスペクト比に合わせて3Dシーンをクロップする基本領域を計算
-                if (sceneAspectRatio > videoAspectRatio) {
-                    sHeight = aSceneCanvas.height;
-                    sWidth = sHeight * videoAspectRatio;
-                    sx = (aSceneCanvas.width - sWidth) / 2;
-                    sy = 0;
-                } else {
-                    sWidth = aSceneCanvas.width;
-                    sHeight = sWidth / videoAspectRatio;
-                    sx = 0;
-                    sy = (aSceneCanvas.height - sHeight) / 2;
-                }
-
-                // 【ここからが修正部分】
-                // 縦に2倍伸ばすため、ソース（切り抜き元）の高さを半分に圧縮します
-                const stretchY = 1.0; // 縦の伸縮率（2.0で2倍）
-                const sHeightStretched = sHeight / stretchY;
-                // 切り抜き位置が中央になるように、Y座標を調整します
-                const syStretched = sy + (sHeight - sHeightStretched) / 2;
-
-                // 縦に圧縮したソース領域を、ビデオ全体の描画先に描画することで、結果的に縦に伸びる
-                context.drawImage(
-                    aSceneCanvas,
-                    sx, syStretched, sWidth, sHeightStretched, // ソース領域（縦に圧縮して切り抜く）
-                    0, 0, videoWidth, videoHeight             // 描画先（ビデオ全体）
-                );
-                
-                return canvas.toDataURL('image/png');
-
-            } catch (error) {
-                console.error("撮影エラー:", error);
-                alert("撮影中にエラーが発生しました。");
-                return null;
-            }
+        if (videoWidth === 0 || videoHeight === 0) {
+            alert("カメラの準備ができていません。少し待ってからもう一度お試しください。");
+            return null;
         }
+        
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        canvas.width = videoWidth;
+        canvas.height = videoHeight;
+
+        // 1. 背景としてビデオ映像を描画
+        context.drawImage(video, 0, 0, videoWidth, videoHeight);
+
+        // 2. 3Dモデルのシーンを重ねる
+        const sceneAspectRatio = aSceneCanvas.width / aSceneCanvas.height;
+        const videoAspectRatio = videoWidth / videoHeight;
+
+        let sx, sy, sWidth, sHeight;
+
+        // ビデオのアスペクト比に合わせて3Dシーンをクロップする
+        if (sceneAspectRatio > videoAspectRatio) {
+            sHeight = aSceneCanvas.height;
+            sWidth = sHeight * videoAspectRatio;
+            sx = (aSceneCanvas.width - sWidth) / 2;
+            sy = 0;
+        } else {
+            sWidth = aSceneCanvas.width;
+            sHeight = sWidth / videoAspectRatio;
+            sx = 0;
+            sy = (aSceneCanvas.height - sHeight) / 2;
+        }
+
+        // 【修正】引き伸ばし処理を削除し、計算した領域をそのまま描画
+        context.drawImage(
+            aSceneCanvas,
+            sx, sy, sWidth, sHeight,          // ソース領域（計算したままの値）
+            0, 0, videoWidth, videoHeight     // 描画先（ビデオ全体）
+        );
+        
+        return canvas.toDataURL('image/png');
+
+    } catch (error) {
+        console.error("撮影エラー:", error);
+        alert("撮影中にエラーが発生しました。");
+        return null;
+    }
+}
     </script>
 </body>
 </html>
