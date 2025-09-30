@@ -9,7 +9,7 @@
     <link href="//fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <style>
-        /* CSSはUIが減った分、少しだけシンプルにできます */
+        /* CSSに変更はありません */
         .ui {
             position: absolute;
             z-index: 100;
@@ -44,7 +44,25 @@
         .ui a:active {
             color: #ff0000;
         }
-        /* プレビューが不要になったため、#snap関連のCSSは削除 */
+        #snap {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background-color: rgba(0,0,0,0.85);
+            z-index: 99;
+            visibility: hidden;
+        }
+        .ui a.disabled {
+            pointer-events: none;
+            color: #cccccc;
+            background-color: #f0f0f0;
+        }
+        #snap.visible {
+            visibility: visible;
+        }
     </style>
 </head>
 
@@ -63,52 +81,92 @@
             <a-asset-item id="model2" src="assets/model2.glb"></a-asset-item>
             <a-asset-item id="model3" src="assets/model3.glb"></a-asset-item>
         </a-assets>
+
         <a-marker type="pattern" url="assets/marker1.patt">
             <a-entity rotation="-90 0 0">
                 <a-entity gltf-model="#model1" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
             </a-entity>
         </a-marker>
+
         <a-marker type="pattern" url="assets/marker2.patt">
             <a-entity rotation="-90 0 0">
                 <a-entity gltf-model="#model2" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
             </a-entity>
         </a-marker>
+
         <a-marker type="pattern" url="assets/marker3.patt">
             <a-entity rotation="-90 0 0">
                 <a-entity gltf-model="#model3" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
             </a-entity>
         </a-marker>
+
         <a-entity camera></a-entity>
+        
     </a-scene>
-    
+    <img id="snap">
     <div class="ui">
-        <a href="#" id="save-photo-btn" title="Save Photo"><i class="material-icons">save_alt</i></a>
+        <a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
+        <a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
+        <a href="#" id="download-photo" title="Download Photo" class="disabled"><i class="material-icons">save_alt</i></a>
     </div>
 
     <script>
-        // 【変更】必要な要素が減る
-        const save_photo_btn = document.querySelector('#save-photo-btn');
+        const image = document.querySelector('#snap');
+        const take_photo_btn = document.querySelector('#take-photo');
+        const delete_photo_btn = document.querySelector('#delete-photo');
         const sceneEl = document.querySelector("a-scene");
+        // 【追加 2/3】 ダウンロードボタンと、撮影した画像データを保存する変数を追加
+        const download_photo_btn = document.querySelector('#download-photo');
+        let snapshotData = null; // 撮影した画像データ(dataURL)を保持する変数
 
-        // 【変更】保存ボタンの処理
-        save_photo_btn.addEventListener("click", function (e) {
+        //スナップショットボタン
+        take_photo_btn.addEventListener("click", function (e) {
             e.preventDefault();
             
             const video = document.querySelector('video');
             if (!video) return;
 
-            // 1. スナップショットを撮影
-            const snapData = takeSnapshot(video);
-            if (!snapData) return;
+            const snap = takeSnapshot(video);
+            if (!snap) return;
 
-            // 2. そのままダウンロード処理を実行
-            const link = document.createElement('a');
-            link.href = snapData;
-            link.download = 'ar-photo.png';
-            link.click();
+            // 撮影した画像データを変数に保存
+            snapshotData = snap;
+
+            //スナップショット表示
+            image.setAttribute('src', snapshotData);
+            image.classList.add('visible');
+
+            // 各ボタンの有効/無効を切り替え
+            delete_photo_btn.classList.remove("disabled");
+            download_photo_btn.classList.remove("disabled"); // ダウンロードボタンを有効化
+            take_photo_btn.classList.add("disabled");
         });
 
-        // 【変更】削除ボタンとダウンロードボタンの処理は不要になったため削除
+        //削除ボタン
+        delete_photo_btn.addEventListener("click", function(e){
+            e.preventDefault();
+            snapshotData = null; // 画像データをクリア
+
+            // スナップショットを隠す
+            image.setAttribute('src', "");
+            image.classList.remove("visible");
+
+            // 各ボタンの有効/無効を切り替え
+            delete_photo_btn.classList.add("disabled");
+            download_photo_btn.classList.add("disabled"); // ダウンロードボタンを無効化
+            take_photo_btn.classList.remove("disabled");
+        });
+
+        // 【追加 3/3】 ダウンロードボタンの処理
+        download_photo_btn.addEventListener("click", function(e) {
+            e.preventDefault();
+            if (!snapshotData) return; // 撮影データがなければ何もしない
+
+            const link = document.createElement('a'); // aタグを生成
+            link.href = snapshotData; // 撮影した画像データをhrefに設定
+            link.download = 'ar-photo.png'; // ダウンロード時のファイル名を設定
+            link.click(); // aタグを擬似的にクリックしてダウンロードを開始
+        });
 
         //スナップショットを撮る関数 (この関数は変更ありません)
         function takeSnapshot(video) {
