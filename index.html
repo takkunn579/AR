@@ -50,9 +50,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain; /* 画像の縦横比を維持 */
+            object-fit: contain;
             background-color: rgba(0,0,0,0.85);
-            z-index: 99; /* UI(z-index: 100)より背面に配置 */
+            z-index: 99;
             visibility: hidden;
         }
         .ui a.disabled {
@@ -102,18 +102,22 @@
 
         <a-entity camera></a-entity>
         
-    </a-scene> <img id="snap">
+    </a-scene>
+    <img id="snap">
     <div class="ui">
         <a href="#" id="delete-photo" title="Delete Photo" class="disabled"><i class="material-icons">delete</i></a>
         <a href="#" id="take-photo" title="Take Photo"><i class="material-icons">photo_camera</i></a>
+        <a href="#" id="download-photo" title="Download Photo" class="disabled"><i class="material-icons">save_alt</i></a>
     </div>
 
     <script>
-        // JavaScriptに変更はありません
         const image = document.querySelector('#snap');
         const take_photo_btn = document.querySelector('#take-photo');
         const delete_photo_btn = document.querySelector('#delete-photo');
         const sceneEl = document.querySelector("a-scene");
+        // 【追加 2/3】 ダウンロードボタンと、撮影した画像データを保存する変数を追加
+        const download_photo_btn = document.querySelector('#download-photo');
+        let snapshotData = null; // 撮影した画像データ(dataURL)を保持する変数
 
         //スナップショットボタン
         take_photo_btn.addEventListener("click", function (e) {
@@ -125,67 +129,68 @@
             const snap = takeSnapshot(video);
             if (!snap) return;
 
+            // 撮影した画像データを変数に保存
+            snapshotData = snap;
+
             //スナップショット表示
-            image.setAttribute('src', snap);
+            image.setAttribute('src', snapshotData);
             image.classList.add('visible');
 
-            // 削除ボタンを有効化し、撮影ボタンを無効化
+            // 各ボタンの有効/無効を切り替え
             delete_photo_btn.classList.remove("disabled");
+            download_photo_btn.classList.remove("disabled"); // ダウンロードボタンを有効化
             take_photo_btn.classList.add("disabled");
         });
 
         //削除ボタン
         delete_photo_btn.addEventListener("click", function(e){
             e.preventDefault();
+            snapshotData = null; // 画像データをクリア
 
             // スナップショットを隠す
             image.setAttribute('src', "");
             image.classList.remove("visible");
 
-            // 削除ボタンを無効化し、撮影ボタンを有効化
+            // 各ボタンの有効/無効を切り替え
             delete_photo_btn.classList.add("disabled");
+            download_photo_btn.classList.add("disabled"); // ダウンロードボタンを無効化
             take_photo_btn.classList.remove("disabled");
         });
 
-        //スナップショットを撮る関数
-function takeSnapshot(video) {
-    try {
-        // 1. 3Dモデルを取得
-        const modelCanvas = sceneEl.components.screenshot.getCanvas('perspective');
+        // 【追加 3/3】 ダウンロードボタンの処理
+        download_photo_btn.addEventListener("click", function(e) {
+            e.preventDefault();
+            if (!snapshotData) return; // 撮影データがなければ何もしない
 
-        // 2. 背景用canvas作成（videoと同じサイズ）
-        const finalCanvas = document.createElement('canvas');
-        const context = finalCanvas.getContext('2d');
-        finalCanvas.width = video.videoWidth;
-        finalCanvas.height = video.videoHeight;
+            const link = document.createElement('a'); // aタグを生成
+            link.href = snapshotData; // 撮影した画像データをhrefに設定
+            link.download = 'ar-photo.png'; // ダウンロード時のファイル名を設定
+            link.click(); // aタグを擬似的にクリックしてダウンロードを開始
+        });
 
-        // 3. 背景カメラ映像をそのまま描画
-        context.drawImage(video, 0, 0, finalCanvas.width, finalCanvas.height);
-
-        // 4. 3Dモデルを少し横に伸ばして重ねる
-        const scaleX = 1.8; // 横10%拡大
-        const scaleY = 1.0; // 縦はそのまま
-        const modelWidth = finalCanvas.width * scaleX;
-        const modelHeight = finalCanvas.height * scaleY;
-
-        // 中央揃え
-        const offsetX = (finalCanvas.width - modelWidth) / 2;
-        const offsetY = (finalCanvas.height - modelHeight) / 2;
-
-        context.drawImage(modelCanvas, offsetX, offsetY, modelWidth, modelHeight);
-
-        // 5. PNGとして返す
-        return finalCanvas.toDataURL('image/png');
-
-    } catch (error) {
-        console.error("撮影エラー:", error);
-        alert("撮影中にエラーが発生しました。");
-        return null;
-    }
-}
-
-
-
+        //スナップショットを撮る関数 (この関数は変更ありません)
+        function takeSnapshot(video) {
+            try {
+                const modelCanvas = sceneEl.components.screenshot.getCanvas('perspective');
+                const finalCanvas = document.createElement('canvas');
+                const context = finalCanvas.getContext('2d');
+                finalCanvas.width = video.videoWidth;
+                finalCanvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, finalCanvas.width, finalCanvas.height);
+                const scaleX = 1.8;
+                const scaleY = 1.0;
+                const modelWidth = finalCanvas.width * scaleX;
+                const modelHeight = finalCanvas.height * scaleY;
+                const offsetX = (finalCanvas.width - modelWidth) / 2;
+                const offsetY = (finalCanvas.height - modelHeight) / 2;
+                context.drawImage(modelCanvas, offsetX, offsetY, modelWidth, modelHeight);
+                return finalCanvas.toDataURL('image/png');
+            } catch (error) {
+                console.error("撮影エラー:", error);
+                alert("撮影中にエラーが発生しました。");
+                return null;
+            }
+        }
     </script>
 </body>
 </html>
